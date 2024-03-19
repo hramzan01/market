@@ -5,6 +5,11 @@ from scipy.optimize import Bounds
 from datetime import datetime
 
 from cons_model import cons_model
+from energy_price_model import *
+
+'''
+Runing all other ML Models
+'''
 
 
 def data_collect(d):
@@ -22,12 +27,12 @@ def data_collect(d):
     # TODO: link the generation model here
 
     # Run the price model
-    # TODO: Link the price model here
+    pred_price = energy_model_run(d)
 
     # Combine the data into and actual and predicted dataframe
     # TODO: check the incoming data types can be concatanted in pandas
     actual_df = pd.concat([price_data, purchase_price, gen_data, cons_actual], axis=1)
-    predicted_df = pd.concat([price_data, purchase_price, gen_data, cons_prediction], axis=1)
+    predicted_df = pd.concat([pred_price, pred_price * 2, gen_data, cons_prediction], axis=1)
 
     # Return the dataframes
     return actual_df, predicted_df
