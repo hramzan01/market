@@ -44,12 +44,15 @@ def optimiser_model(data):
     # SalePrice_£/kwh	PurchasePrice_£/kwh	Generation_kwh	Consumption_kwh
     # convert data into numpy array
     df = np.array(data)
+    time_points = 7*24
 
     # set up profit function
     def profit(x_input):
         '''
         Function to be minimised for the optimsation problem
         '''
+        time_points = 7*24
+
         battery_size = 5 # kwh, max battery charge
         battery_charge = 1 # kwh, initial battery charge
         cost_punishment = 0 # initial cost punishment
@@ -92,7 +95,7 @@ def optimiser_model(data):
     # concatanate x0 and x1 for the model
     x_input = np.concatenate((x0,x1),axis=0)
 
-    # run the minimisation 
+    # run the minimisation
     res = minimize(
         profit,
         x_input,
@@ -100,9 +103,45 @@ def optimiser_model(data):
         method='nelder-mead',
         options={'xatol': 1e-12, 'disp': True}
         )
+    # Work out the maximum profit from the minimisation
+    price_week = profit(res.x)
+
+    # ste up function to run the optimal model
+    def battery_storage(x_input):
+        '''
+        Function to be minimised for the optimsation problem
+        '''
+        x0 = x_input[0:72]
+        x1 = x_input[72:]
+
+        battery = np.zeros(73)
+        # initial battery charge
+        battery[0] = 1
+        # battery size
+        battery_size = 5
+        cost_punishment = 0
+        for i in range(len(battery)-1):
+            battery[i+1] = battery[i] + data[i,2] - data[i,3] + x0[i] - x1[i]
+            if battery[i + 1] > battery_size:
+                cost_punishment += 1000
+
+        buy = x0[:] * data[:,1]
+        sell = x1[:] * data[:,0]
 
 
-    return price, battery_storage,
+        cost = np.sum(buy - sell) + cost_punishment
+        battery_charge = battery[72] * np.mean(data[i,0])
+        return battery, (cost - battery_charge)
+
+    # Run the optimsal scenario
+    (battery_store, profit) = battery_storage(res.x)
+
+
+    # Find the energy bought and sold
+    energy_bought = res.x[: time_points]
+    energy_sold = res.x[time_points :]
+
+    return price_week, battery_store, energy_bought, energy_sold
 
 
 def baseline_model():
