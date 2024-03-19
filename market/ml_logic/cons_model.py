@@ -8,7 +8,7 @@ from prophet.diagnostics import cross_validation, performance_metrics
 from prophet.plot import plot_cross_validation_metric
 
 
-def cons_model(X, d):
+def cons_model(X ='A', d=datetime(2014,3,19,18,00,0)):
     '''
     A model which takes in X, ACORN value for the house and d, the dat which is being investigated.
     Returns the predicted and actual energy data in lists
