@@ -35,6 +35,7 @@ def cons_model(X, d):
     data['date'] = data['date'].apply(lambda x: datetime.strptime(x, date_format))
     # renaming columns for Prophet
     data = data.rename(columns = {'date':'ds','Average energy(kWh/hh)':'y'})
+    # remove the first row and take only hourly samples
     data = data.iloc[1:,:]
     data = data.iloc[::2,:]
     data = data.reset_index().drop(columns=['index'])
