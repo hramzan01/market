@@ -40,6 +40,8 @@ def optimiser_model(data):
     and outputs a prediction based on when to buy and sell
     along with the total profitability of the period
     '''
+    # TODO clean up from notebook form
+
     # Input data must be in the form:
     # SalePrice_£/kwh	PurchasePrice_£/kwh	Generation_kwh	Consumption_kwh
     # convert data into numpy array
@@ -145,13 +147,28 @@ def optimiser_model(data):
     return price_week, battery_store, energy_bought, energy_sold
 
 
-def baseline_model():
+def baseline_model(data):
     '''
     A model which takes in the results of three seperate models:
     Energy consumption, PV Energy Gen, Energy Price
     and outputs a baseline profitability
     '''
-    return
+    df = np.array(data)
+    df = np.concatenate((df,np.zeros((168,1))),axis=1)
+    print(df)
+    for i in range(168):
+        # if generation is more than consumption
+        if df[i,2] > df[i,3]:
+            #profit is from sales
+            df[i,4] = (df[i,2] - df[i,3]) * df[i,0]
+        elif df[i,2] < df[i,3]:
+            #loss is from purhcase
+            df[i,4] = (df[i,2] - df[i,3]) * df[i,1]
+        else:
+            df[i,4] = 0
+    print(df)
+    baseline = np.sum(df[:,4])
+    return baseline
 
 
 #if __name__ == '__main__':
