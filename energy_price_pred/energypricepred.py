@@ -51,7 +51,8 @@ def process_df(file, previous_days=6*30, split_ratio=0.9, resample_rate='H'):
     end_date = str(df_price['ds'][df.index[-1]])
     df_price = df_price[(df_price['ds']>start_date) & (df_price['ds']<= end_date)]
 
-    # df_price = df_price.resample('H').mean()
+    ## df_price['ds'] = pd.to_datetime(df_price['ds'])
+    # df_price = df_price.resample(resample_rate, on='ds').mean()
 
     check_start_date=df_price['ds'][df_price.index[0]]
     check_end_date=df_price['ds'][df_price.index[-1]]
@@ -62,7 +63,7 @@ def process_df(file, previous_days=6*30, split_ratio=0.9, resample_rate='H'):
     test = df_price.iloc[split_index:]
     return df_price, train, test
 
-def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='30min'):
+def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='H'):
     """Returns trained prophet model and forecasting for """
     model = Prophet(seasonality_mode=seasonality_mode, yearly_seasonality=year_seasonality_mode, interval_width=0.95)
     model.fit(train)
@@ -77,18 +78,18 @@ def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_s
     initial=round(((end_date - start_date).days)/2)
     horizon=round(initial/5)
     period = round(horizon/2)
-
+    print(f'performing cross-validation using, initial: {initial}, horizon:{horizon}, and period:{period}')
     df_cv = cross_validation(model = model, initial=f'{initial} days', horizon=f'{horizon} days', period=f'{period} days')
     df_p = performance_metrics(df_cv)
     return model, forecast_y_df, df_cv, df_p
 
-def pred(df_price, model, forecast_start_date='2024-03-18', forceast_end_date='2024-03-25'):
+def pred(df_price, model, forecast_start_date='2024-03-18', forceast_end_date='2024-03-25', freq='H'):
     # forecast_days = forceast_end_date-forecast_start_date
     date1 = datetime.strptime(forceast_end_date, "%Y-%m-%d").date()
     date2 = datetime.strptime(forecast_start_date, "%Y-%m-%d").date()
     forecast_days = int((date1 - date2).days)
     horizon = 24*forecast_days
-    future = model.make_future_dataframe(periods = horizon, freq='30min')
+    future = model.make_future_dataframe(periods = horizon, freq= freq)
     forecast = model.predict(future)
     pred_y_df = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
     print(forecast_days)
