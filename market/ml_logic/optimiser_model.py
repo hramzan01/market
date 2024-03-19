@@ -65,18 +65,18 @@ def optimiser_model(data):
         battery[0] = battery_charge
 
         for i in range(len(battery)-1):
-            battery[i+1] = battery[i] + data[i,2] - data[i,3] + x0[i] - x1[i]
+            battery[i+1] = battery[i] + df[i,2] - df[i,3] + x0[i] - x1[i]
             if battery[i + 1] > battery_size:
                 cost_punishment += cost_punishment_increment
             if battery[i+1] < 0:
                 cost_punishment += cost_punishment_increment
 
-        buy = x0[:] * data[:,1]
-        sell = x1[:] * data[:,0]
+        buy = x0[:] * df[:,1]
+        sell = x1[:] * df[:,0]
 
 
         cost = np.sum(buy - sell) + cost_punishment
-        battery_charge = battery[time_points] * np.mean(data[i,0])
+        battery_charge = battery[time_points] * np.mean(df[i,0])
         return cost - battery_charge
 
     # x0 = initial purchase amount
@@ -89,7 +89,7 @@ def optimiser_model(data):
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
-    ub =np.concatenate((np.ones(time_points)*3, data[:,2]), axis = 0)
+    ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
     bounds = Bounds(lb=lb, ub=ub)
 
     # concatanate x0 and x1 for the model
@@ -111,26 +111,27 @@ def optimiser_model(data):
         '''
         Function to be minimised for the optimsation problem
         '''
-        x0 = x_input[0:72]
-        x1 = x_input[72:]
+        time_points = 24*7
+        x0 = x_input[0:time_points]
+        x1 = x_input[time_points:]
 
-        battery = np.zeros(73)
+        battery = np.zeros(time_points+1)
         # initial battery charge
         battery[0] = 1
         # battery size
         battery_size = 5
         cost_punishment = 0
         for i in range(len(battery)-1):
-            battery[i+1] = battery[i] + data[i,2] - data[i,3] + x0[i] - x1[i]
+            battery[i+1] = battery[i] + df[i,2] - df[i,3] + x0[i] - x1[i]
             if battery[i + 1] > battery_size:
                 cost_punishment += 1000
 
-        buy = x0[:] * data[:,1]
-        sell = x1[:] * data[:,0]
+        buy = x0[:] * df[:,1]
+        sell = x1[:] * df[:,0]
 
 
         cost = np.sum(buy - sell) + cost_punishment
-        battery_charge = battery[72] * np.mean(data[i,0])
+        battery_charge = battery[time_points] * np.mean(df[i,0])
         return battery, (cost - battery_charge)
 
     # Run the optimsal scenario
@@ -152,4 +153,6 @@ def baseline_model():
     '''
     return
 
-data_collect(datetime(2014,5,6,18,30,5))
+
+#if __name__ == '__main__':
+    #data_collect(datetime(2014,5,6,18,30,5))
