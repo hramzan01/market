@@ -13,14 +13,17 @@ from datetime import timedelta
 from datetime import datetime
 from dateutil.parser import parse
 
+
 """
-Downloading, creating a model and foreacsting London energy prices
+Downloading, creating a model, and foreacsting London energy prices
 """
+
 
 def create_folder_if_not_exists(folder_path):
     """
     Creating folder for London wholesale energy prices
     """
+    # if folder exists, do nothing. If it doesn';t exist, create.
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
         print(f"Folder '{folder_path}' created.")
@@ -39,6 +42,50 @@ def download_file(file, save_path):
         print("File downloaded successfully")
     else:
         print("Failed to download file. Status code:", response.status_code)
+
+def create_train_test_set(file, d, previous_days=6*30, resample_rate='H'):
+    """
+    AEOXLEY. Returns original df, and train set
+    Also resamples the data from 30 min to hourly intervals
+    """
+    n_test = 7 #days
+    split_ratio = 1 - n_test/(previous_days + n_test)
+
+    # convert file to pandas dataframe
+    df = pd.read_csv(file)
+
+    # restructure the data
+    column_names=['date_time', 'time', 'Letter', 'City', 'Price']
+    df.columns = column_names
+    df_price = pd.DataFrame(df[['date_time', 'Price']])
+    df_price.columns = ['ds', 'y']
+    df_price['ds'] = df_price['ds'].str.slice(stop=-6)
+    df_price['ds'] = pd.to_datetime(df_price['ds'], format='%Y-%m-%d %H:%M:%S')
+
+    # check date is in required range
+    start_date_dt = d - timedelta(days=previous_days)
+    end_date_dt = d + timedelta(days=n_test)
+    start_date = str(start_date_dt)
+    end_date = str(end_date_dt)
+
+    if start_date_dt - df_price['ds'][0] > timedelta(0) and end_date_dt - df_price['ds'][len(df_price['ds'])-1] < timedelta(0):
+        print(f'Specified date {d} is in correct range')
+    else:
+        print(f'Specified date {d} is out of the range')
+        print(end_date)
+        return
+
+    # Create train and test set
+    df_price = df_price[(df_price['ds']>start_date) & (df_price['ds']<= end_date)]
+    check_start_date=df_price['ds'][df_price.index[0]]
+    check_end_date=df_price['ds'][df_price.index[-1]]
+    print(f'df created including time history of electricity export prices between {check_start_date} and {check_end_date} i.e. for the last {(check_end_date - check_start_date)} days')
+    split_index = round(df_price.shape[0]*split_ratio) - 1
+    train = df_price.iloc[:split_index]
+    test = df_price.iloc[split_index:-1]
+    test = test.iloc[::2,:]
+    print('Train and Test data created')
+    return df_price, train, test
 
 
 def process_df(file, d, previous_days=6*30, split_ratio=0.9, resample_rate='H'):
@@ -119,20 +166,21 @@ def energy_model_run(date):
 
 
 if __name__ == '__main__':
-    ## Set ups for files
-    #url = 'https://files.energy-stats.uk/csv_output/'
-    #dir = os.path.join(os.getcwd(), 'raw_data')
-    #csv_name = 'csv_agileoutgoing_C_London.csv'
-    #file = os.path.join(url, csv_name)
-    #save_path = os.path.join(dir, csv_name)
-
-    # Download file
-    #download_file(file, save_path)
-    # Process df
-    # Input required date
     year = 2024
     month = 3
     day = 10
     date = datetime(year,month,day)
-    pred = energy_model_run(date)
-    print(pred)
+
+
+    url = 'https://files.energy-stats.uk/csv_output/'
+    dir = os.path.join(os.getcwd(), 'raw_data')
+    csv_name = 'csv_agileoutgoing_C_London.csv'
+    file = os.path.join(url, csv_name)
+    save_path = os.path.join(dir, csv_name)
+
+    download_file(file, save_path)
+    df_price, train, test = create_train_test_set(file, d=date, previous_days=6*30, resample_rate='H')
+    print(train)
+    print(test)
+    #pred = energy_model_run(date)
+    #print(pred)
