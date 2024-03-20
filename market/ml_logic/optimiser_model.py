@@ -27,12 +27,12 @@ def data_collect(d):
     # TODO: link the generation model here
 
     # Run the price model
-    pred_price = energy_model_run(d)
+    price_actual, price_pred = energy_model_run(date, forecast_days = 7)
 
     # Combine the data into and actual and predicted dataframe
     # TODO: check the incoming data types can be concatanted in pandas
-    actual_df = pd.concat([price_data, purchase_price, gen_data, cons_actual], axis=1)
-    predicted_df = pd.concat([pred_price, pred_price * 2, gen_data, cons_prediction], axis=1)
+    actual_df = pd.concat([price_actual, price_actual * 2, gen_data, cons_actual], axis=1)
+    predicted_df = pd.concat([price_pred, price_pred * 2 * 2, gen_data, cons_prediction], axis=1)
 
     # Return the dataframes
     return actual_df, predicted_df
