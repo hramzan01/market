@@ -3,6 +3,8 @@ import pandas as pd
 from scipy.optimize import minimize
 from scipy.optimize import Bounds
 from datetime import datetime
+from datetime import timedelta
+
 
 from cons_model import cons_model
 from energy_price_model import *
@@ -27,7 +29,7 @@ def data_collect(d):
     # TODO: link the generation model here
 
     # Run the price model
-    price_actual, price_pred = energy_model_run(date, forecast_days = 7)
+    price_actual, price_pred = energy_model_run(d, forecast_days = 7)
 
     # Combine the data into and actual and predicted dataframe
     # TODO: check the incoming data types can be concatanted in pandas
@@ -176,5 +178,5 @@ def baseline_model(data):
     return baseline
 
 
-#if __name__ == '__main__':
-    #data_collect(datetime(2014,5,6,18,30,5))
+if __name__ == '__main__':
+    data_collect(datetime(2024,1,3,18,30,5))

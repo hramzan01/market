@@ -65,3 +65,5 @@ if __name__ == '__main__':
     actual, prediction = cons_model('A', d=datetime(2014,5,6,18,30,5))
     print(actual)
     print(prediction)
+    #d=datetime(2014,5,6,18,30,5)
+    #print(d.date())

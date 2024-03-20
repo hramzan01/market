@@ -68,7 +68,8 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
     end_date_dt = d + timedelta(days=forecast_days)
     start_date = str(start_date_dt)
     end_date = str(end_date_dt)
-    if start_date_dt - df_price['ds'][0] > timedelta(0) and end_date_dt - df_price['ds'][len(df_price['ds'])-1] < timedelta(0):
+    print(start_date_dt)
+    if start_date_dt - df_price['ds'][0] > timedelta(0): #and end_date_dt - df_price['ds'][len(df_price['ds'])-1] < timedelta(0):
         print(f'Specified date {d} is in correct range')
     else:
         print(f'Specified date {d} is out of the range')
@@ -128,6 +129,7 @@ def energy_model_run(date, forecast_days = 7):
 
     # download the latest file
     download_file(file, save_path)
+    #date=date.date()
 
     # Run the model
     train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
