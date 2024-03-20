@@ -16,11 +16,14 @@ Runing all other ML Models
 
 def data_collect(d):
     '''
-    This function takes in the start date of interst
+    This function takes in the start date of interest
     and collects the predictions from the three other models
     Energy consumption, PV Energy Gen, Energy Price
-    The function outputs the data as a pandas dataframe
+    The function outputs two pandas dataframes
+    One dateaframe for the actual data and one dateafram for the predicted data
     '''
+    # Format input date to be an hourly date
+    d=d.replace(minute = 0, second = 0)
 
     # Run the consumption model
     cons_actual, cons_prediction = cons_model('A', d)
@@ -31,13 +34,23 @@ def data_collect(d):
     # Run the price model
     price_actual, price_pred = energy_model_run(d, forecast_days = 7)
 
-    # Combine the data into and actual and predicted dataframe
-    # TODO: check the incoming data types can be concatanted in pandas
-    actual_df = pd.concat([price_actual, price_actual * 2, gen_data, cons_actual], axis=1)
-    predicted_df = pd.concat([price_pred, price_pred * 2 * 2, gen_data, cons_prediction], axis=1)
+    # Combine the data into an actual dataframe
+    # TODO: concatanate the consumption data. make sure it comes in one dataframe
+    price_buy = (price_actual[['y']] * 2)
+    price_buy = price_buy.rename(columns={'y':'price_buy'})
+    actual_df = pd.concat([price_actual, price_buy, cons_actual['y']], axis = 1)
+    print(actual_df)
+
+    # Combine the data into a predicted dataframe
+    price_buy = (price_pred[['yhat']] * 2)
+    price_buy = price_buy.rename(columns={'yhat':'price_buy'})
+    predicted_df = pd.concat([price_actual, price_buy, cons_actual], axis = 1)
+    print(predicted_df)
+
+
 
     # Return the dataframes
-    return actual_df, predicted_df
+    return #actual_df, predicted_df
 
 
 def optimiser_model(data):
