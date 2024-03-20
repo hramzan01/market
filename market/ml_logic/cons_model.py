@@ -8,7 +8,7 @@ from prophet.diagnostics import cross_validation, performance_metrics
 from prophet.plot import plot_cross_validation_metric
 
 
-def cons_model(X ='A', d=datetime(2014,3,19,18,00,0)):
+def cons_model(X ='A', d=datetime(2024,3,19,18,00,0)):
     '''
     A model which takes in X, ACORN value for the house and d, the dat which is being investigated.
     Returns the predicted and actual energy data in lists
@@ -39,7 +39,7 @@ def cons_model(X ='A', d=datetime(2014,3,19,18,00,0)):
     data = data.iloc[1:,:]
     data = data.iloc[::2,:]
     data = data.reset_index().drop(columns=['index'])
-    print(data.columns)
+    print('Energy consumption data processed')
 
     # Define train and test data
     date_index = data.index[data['ds'] == d][0]
@@ -49,17 +49,19 @@ def cons_model(X ='A', d=datetime(2014,3,19,18,00,0)):
     # Create Prophet model
     m = Prophet()
     m.fit(X_train)
+    print('Energy consumption model created')
 
     # Forecast one week data
     future = m.make_future_dataframe(periods=7*24, freq='h')
     forecast = m.predict(future)
+    print('Energy consumption forecast complete')
 
     # Create return strings of forecasted and real energy consumption
     prediction = forecast[['ds', 'yhat']].iloc[date_index:]
     actual = data.iloc[date_index:date_index + 168]
 
     # return forecasted and real energy consumption
-    return actual,prediction
+    return actual, prediction
 
 if __name__ == '__main__':
     actual, prediction = cons_model('A', d=datetime(2014,5,6,18,30,5))
