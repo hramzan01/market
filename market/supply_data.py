@@ -1,5 +1,6 @@
 # Import relevant libraries
 import pandas as pd 
+import requests
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
@@ -79,7 +80,7 @@ def preprocess_data(train=True):
     
 # //////////////////////
 # RNN Architecture
-def train_model():
+def trained_model():
     n_input = 25  # Number of samples/rows/timesteps to look in the past to forecast the next sample
     batch_size = 64  # Number of timeseries samples in each batch
 
@@ -101,9 +102,42 @@ def train_model():
     return model
 
 # ////////////////////////
+# Process 7 day forecast
 
-# Step 6: Make predictions
-def make_prediction():
-    predictions = train_model.predict(preprocess_data(train=False)) # replace with inputs from front end
+def predict_supply():
+    base_url = "https://api.open-meteo.com/v1/forecast"
 
-    return predictions
+    params = {
+        "latitude": 51.42,
+        "longitude": -0.19,
+        "hourly": [
+            "is_day",
+            "cloud_cover",
+            "weather_code",
+            "temperature_2m",
+            "shortwave_radiation",
+            "direct_radiation",
+            "diffuse_radiation",
+            "direct_normal_irradiance",
+            "terrestrial_radiation"
+        ],
+        "timezone": "Europe/London"
+    }
+
+    responses = requests.get(base_url, params).json()
+
+    future_forecast = pd.DataFrame()
+
+    for param in params['hourly']:
+        future_forecast[param] = responses['hourly'][param]
+
+    forecast_values = future_forecast.values
+
+    # Step 2: Scale features and target
+    scaled_forecast = Xscaler.transform(forecast_values)
+
+    # Create prediction dataset
+    # Step 4: Create TensorFlow dataset
+    forecast_dataset = create_dataset(scaled_forecast, np.zeros_like(forecast_values[:,0]), length=n_input, batch_size=batch_size)
+
+    forecast_prediction = trained_model.predict(forecast_dataset)
