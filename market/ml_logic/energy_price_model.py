@@ -23,7 +23,7 @@ def create_folder_if_not_exists(folder_path):
     """
     Creating folder for London wholesale energy prices
     """
-    # if folder exists, do nothing. If it doesn';t exist, create.
+    # if folder exists, do nothing. If it doesn't exist, create.
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
         print(f"Folder '{folder_path}' created.")
@@ -88,6 +88,7 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
     train = train.iloc[1:]
     train = train.iloc[::2,:]
     test = test.iloc[::2,:]
+    test.set_index('ds', inplace = True)
     print('Train and Test data created')
     return train, test
 
@@ -112,6 +113,7 @@ def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_s
 
     # Return prediction
     y_pred = forecast_y_df.iloc[-forecast_days*24 :]
+    y_pred.set_index('ds', inplace = True)
     print('Prediction Successful')
     return model, y_pred
 
@@ -129,13 +131,13 @@ def energy_model_run(date, forecast_days = 7):
 
     # download the latest file
     download_file(file, save_path)
-    #date=date.date()
 
     # Run the model
     train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
     model, forecast_y_df = ml_model(train, forecast_days=forecast_days, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='h')
     print('Model finished')
-    return test, forecast_y_df[['ds', 'yhat']]
+    #return test, forecast_y_df[['ds', 'yhat']]
+    return test, forecast_y_df[['yhat']]
 
 
 if __name__ == '__main__':
@@ -145,3 +147,5 @@ if __name__ == '__main__':
     date = datetime(year,month,day)
 
     test, forecast_y_df = energy_model_run(date, forecast_days = 7)
+    print(test)
+    print(forecast_y_df)
