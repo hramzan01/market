@@ -4,6 +4,7 @@ from scipy.optimize import minimize
 from scipy.optimize import Bounds
 from datetime import datetime
 from datetime import timedelta
+import os
 
 
 from cons_model import cons_model
@@ -37,25 +38,22 @@ def data_collect(d):
 
     # Run the Generation model
     # TODO: link the generation model here
-
+    gen = pd.read_csv(f'{os.getcwd()}/raw_data/final_prediction.csv')
+    print(gen)
 
     # Combine the data into an actual dataframe
     # TODO: concatanate the consumption data. make sure it comes in one dataframe
     price_buy = (price_actual[['SalePrice_£/kwh']] * 2)
     price_buy = price_buy.rename(columns={'y':'PurchasePrice_£/kwh'})
-    actual_df = pd.concat([price_actual, price_buy, cons_actual['y']], axis = 1)
-    print(actual_df)
+    actual_df = pd.concat([price_actual, price_buy, cons_actual['Consumption_kwh']], axis = 1)
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_£/kwh']] * 2)
     price_buy = price_buy.rename(columns={'SalePrice_£/kwh':'PurchasePrice_£/kwh'})
     predicted_df = pd.concat([price_pred, price_buy, cons_prediction], axis = 1)
-    print(predicted_df)
-
-
 
     # Return the dataframes
-    return #actual_df, predicted_df
+    return actual_df, predicted_df
 
 
 def optimiser_model(data):
@@ -197,4 +195,4 @@ def baseline_model(data):
 
 
 if __name__ == '__main__':
-    data_collect(datetime(2024,1,3,18,30,5))
+    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
