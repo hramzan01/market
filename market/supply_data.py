@@ -6,17 +6,19 @@ import requests
 import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
+import warnings
+warnings.simplefilter('ignore')
 
 n_input = 24
 batch_size = 64
 
 def load_raw_data():
     '''
-    retrievs UKPV hourly datset and merges to combine time series with location and meta data
+    function retrievs UKPV hourly datset and merges to combine time series with location and meta data
     '''
     # Load in Data
-    df_spec = pd.read_csv('../data/raw_data/metadata.csv')
-    df_energy_ldn = pd.read_csv('../data/raw_data/hourly_generation_ldn.csv')
+    df_spec = pd.read_csv('data/raw_data/metadata.csv')
+    df_energy_ldn = pd.read_csv('data/raw_data/hourly_generation_ldn.csv')
 
     # rename of change type
     df_energy_ldn.rename(columns={'datetime': 'timestamp'}, inplace=True)
@@ -26,21 +28,23 @@ def load_raw_data():
     df_merged = pd.merge(df_energy_ldn,df_spec,how='left',on='ss_id')
     df_merged['formatted_timestamp'] = df_merged['timestamp'].dt.strftime('%Y-%m-%dT%H:%M')
 
+    print('--raw data loaded--')
+    print(df_merged.head(3))
     return df_merged
 
 def append_weather_params():
     '''
-    reads historical weather forecast for london area and appends to existing DF
+    function reads historical weather forecast for london area and appends to existing DF
     '''
     # Define list of properties to iterate through as chunks
-    df_merged = load_raw_data
+    df_merged = load_raw_data()
     id_list = df_merged.ss_id.unique()
 
     # define hourly parameters to loop through each chunk
     hourly_params = ["temperature_2m", "weather_code", "cloud_cover", "is_day", "shortwave_radiation", "direct_radiation", "diffuse_radiation", "direct_normal_irradiance", "global_tilted_irradiance", "terrestrial_radiation"]
 
     # Preprocess hourly time data to create an index mapping timestamps to indices
-    data = pd.read_json('../data/raw_data/weather_api.json')
+    data = pd.read_json('data/raw_data/weather_api.json')
     hourly_time = data['hourly']['time']
     timestamp_index = {timestamp: idx for idx, timestamp in enumerate(hourly_time)}
 
@@ -60,19 +64,19 @@ def append_weather_params():
     for id in id_list:
         df_merged_multiple = df_merged[df_merged['ss_id']== id]
 
-        data = pd.read_json('../data/raw_data/weather_api.json')
+        data = pd.read_json('data/raw_data/weather_api.json')
         
         # loop through each weather param and populate weather features to DF
         for param in hourly_params:
             df_merged_multiple[param] = df_merged_multiple.apply(lambda row: get_solar_feature(row, param, data, timestamp_index), axis=1)
         print(f'completed property id:{id}')
 
-        # Export DataFrame to CSV and concatenate
-        csv_filename = f"../data/processed_data/ldn_energy_supply.csv"
-        if os.path.exists(csv_filename):
-            df_merged_multiple.to_csv(csv_filename, mode='a', header=False, index=False)
-        else:
-            df_merged_multiple.to_csv(csv_filename, index=False)
+        # # Export DataFrame to CSV and concatenate
+        # csv_filename = f"../data/processed_data/ldn_energy_supply.csv"
+        # if os.path.exists(csv_filename):
+        #     df_merged_multiple.to_csv(csv_filename, mode='a', header=False, index=False)
+        # else:
+        #     df_merged_multiple.to_csv(csv_filename, index=False)
             
     print('--------chunking complete!------')
     
@@ -80,10 +84,10 @@ def append_weather_params():
 
 def get_training_data():
     '''
-    this preprocesses the feature engineered dataset to be passed into RNN model
+    function preprocesses the feature engineered dataset to be passed into RNN model
     '''
     # define training data of all properties
-    training_data = pd.read_csv('../data/processed_data/ldn_energy_supply.csv')
+    training_data = pd.read_csv('data/processed_data/ldn_energy_supply.csv')
 
     # define sample set of 1 property
     id_list = training_data.ss_id.unique()
@@ -149,7 +153,12 @@ def get_training_data():
 
     train_dataset = create_dataset(scaled_X_train, scaled_y_train, length=n_input, batch_size=batch_size)
     test_dataset = create_dataset(scaled_X_test, scaled_y_test, length=n_input, batch_size=batch_size)
-                
+
+    print('--training data loaded--')
+    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
+
+def train_model():
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -165,22 +174,24 @@ def get_training_data():
 
     # Fit
     model.fit(train_dataset, epochs=5, verbose=0)
-    print('model trained sucessfuly')
+    print('--model trained sucessfuly--')
     
     # Save the model
-    model.save("../models/rnn_model.keras")
-    print('model saved')
+    # model.save("../models/rnn_model.keras")
+    # print('model saved')
     
-    return create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
-    
+    return model
+        
 def get_prediction():
     '''
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
-    # Load the model
+    # Load the model params and model
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
     def custom_activation(x):
         return tf.maximum(x, 0)
-    loaded_model = tf.keras.models.load_model("../models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
+    loaded_model = tf.keras.models.load_model("models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
     
     # Get 7 day forecast from API
     base_url = "https://api.open-meteo.com/v1/forecast"
@@ -202,8 +213,8 @@ def get_prediction():
         "timezone": "Europe/London"
     }
 
+    # save response as Dataframe
     responses = requests.get(base_url, params).json()
-
     future_forecast = pd.DataFrame()
 
     for param in params['hourly']:
@@ -216,7 +227,6 @@ def get_prediction():
     scaled_forecast = Xscaler.transform(forecast_values)
 
     # Create TensorFlow dataset
-    create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
     forecast_dataset = create_dataset(scaled_forecast, np.zeros_like(forecast_values[:,0]), length=n_input, batch_size=batch_size)
 
     # Predict with saved model
@@ -232,13 +242,21 @@ def get_prediction():
     forecast_prediction_extended = np.append(forecast_prediction_actual, np.zeros(length_diff))
     future_forecast['kwh'] = forecast_prediction_extended
 
+    # Save prediction as df
     final_prediction = future_forecast[[
         'weather_code',
         'kwh'
     ]]
     
+    print(final_prediction)
     return final_prediction
 
-
-
-        
+if __name__ == '__main__':
+    ''''
+    Uncomment required steps
+    '''
+    # load_raw_data()
+    # append_weather_params()
+    # get_training_data()
+    # train_model()
+    get_prediction()
