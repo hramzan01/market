@@ -26,10 +26,16 @@ def create_dataset(X, y, length, batch_size):
 
 def predict_gen():
     ''' Predcit the energy generation from solar panels'''
-    # load the model
-    file_path = f'{os.getcwd()}/models/rnn_model.keras'
 
-    loaded_model = keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
+
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+
+    # load the model
+    file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
+    print(file_path)
+
+    loaded_model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
 
     # get the weather forecast data from the API
     base_url = "https://api.open-meteo.com/v1/forecast"

@@ -39,13 +39,16 @@ def data_collect(d):
     # Run the Generation model
     # TODO: link the generation model here
     gen = pd.read_csv(f'{os.getcwd()}/raw_data/final_prediction.csv')
-    print(gen)
+    gen['ds']=price_actual.reset_index()['ds']
+    gen.drop(columns = ['Unnamed: 0', 'weather_code'], inplace = True)
+    gen.set_index('ds', inplace = True)
+    gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
 
     # Combine the data into an actual dataframe
     # TODO: concatanate the consumption data. make sure it comes in one dataframe
     price_buy = (price_actual[['SalePrice_£/kwh']] * 2)
     price_buy = price_buy.rename(columns={'y':'PurchasePrice_£/kwh'})
-    actual_df = pd.concat([price_actual, price_buy, cons_actual['Consumption_kwh']], axis = 1)
+    actual_df = pd.concat([price_actual, price_buy, cons_actual['Consumption_kwh'], gen], axis = 1)
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_£/kwh']] * 2)
@@ -178,7 +181,6 @@ def baseline_model(data):
     '''
     df = np.array(data)
     df = np.concatenate((df,np.zeros((168,1))),axis=1)
-    print(df)
     for i in range(168):
         # if generation is more than consumption
         if df[i,2] > df[i,3]:
@@ -189,10 +191,14 @@ def baseline_model(data):
             df[i,4] = (df[i,2] - df[i,3]) * df[i,1]
         else:
             df[i,4] = 0
-    print(df)
     baseline = np.sum(df[:,4])
     return baseline
 
 
 if __name__ == '__main__':
     actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+    print(actual_df)
+    price_week, battery_store, energy_bought, energy_sold = optimiser_model(actual_df)
+    print(price_week)
+    baseline = baseline_model(actual_df)
+    print(baseline)
