@@ -8,12 +8,12 @@ from prophet.diagnostics import cross_validation, performance_metrics
 from prophet.plot import plot_cross_validation_metric
 
 
-def cons_model(X ='A', d=datetime(2024,3,19,18,00,0)):
+def cons_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     '''
     A model which takes in X, ACORN value for the house and d, the dat which is being investigated.
     Returns the predicted and actual energy data in lists
     '''
-
+    # TODO: add an extra input as number of days
     # Data import
     X = X.upper()
     path = '/home/adam/code/hramzan01/market/raw_data/ACORN_A_processed.csv'
@@ -23,7 +23,7 @@ def cons_model(X ='A', d=datetime(2024,3,19,18,00,0)):
 
     # Preprocess date to reset minutes and sceonds to 0
     # TODO change datetime from 2013 if needed
-    d = datetime(2013, d.month, d.day, d.hour, 0, 0)
+    d = datetime(2013, date.month, date.day, date.hour, 0, 0)
 
     # Processing input data for profit
     # TODO: update data processing so data comes into the model in the right format
@@ -43,7 +43,6 @@ def cons_model(X ='A', d=datetime(2024,3,19,18,00,0)):
 
     # Define train and test data
     date_index = data.index[data['ds'] == d][0]
-    print(date_index)
     X_train = data.iloc[:date_index]
 
     # Create Prophet model
@@ -59,12 +58,18 @@ def cons_model(X ='A', d=datetime(2024,3,19,18,00,0)):
     # Create return strings of forecasted and real energy consumption
     prediction = forecast[['ds', 'yhat']].iloc[date_index:]
     actual = data.iloc[date_index:date_index + 168]
+    # resccale to current time period
+    time_diff = date - d
+    prediction['ds'] += time_diff
+    prediction.set_index('ds', inplace = True)
+    actual['ds'] += time_diff
+    actual.set_index('ds', inplace = True)
 
     # return forecasted and real energy consumption
     return actual, prediction
 
 if __name__ == '__main__':
-    actual, prediction = cons_model('A', d=datetime(2014,5,6,18,30,5))
+    actual, prediction = cons_model('A', date=datetime(2018,5,6,18,0,0))
     print(actual)
     print(prediction)
     #d=datetime(2014,5,6,18,30,5)
