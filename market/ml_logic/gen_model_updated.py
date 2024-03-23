@@ -83,7 +83,7 @@ def append_weather_params():
 
     return df_merged
 
-def get_training_data(starting_index  ):
+def get_training_data():
     '''
     function preprocesses the feature engineered dataset to be passed into RNN model
     '''
@@ -296,36 +296,14 @@ def weekly_validation(d):
     df_validation['date'] = training_sample.timestamp[:limiter]
     df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
 
+    print(df_validation.head(10))
+
     index_ = df_validation[df_validation['date'] == d].index.item()
     print(index_)
     # Select the next 7 rows from the matched index
     weekly_validation = df_validation.iloc[index_:index_+168]
 
     return weekly_validation
-
-# print('printing', weekly_validation(datetime(2019,1,3,18,0,0)))
-
-
-
-
-# IN progress AEOXLEY
-def get_weekly_prediction(d):
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
-    def custom_activation(x):
-        return tf.maximum(x, 0)
-    # load the model
-    file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
-    loaded_model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
-
-    predictions = loaded_model.predict(test_dataset)
-    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
-    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
-
-    return scaled_y_test_inverse, predictions_inverse
-
-
-
-
 
 
 def run_gen_model():
@@ -344,14 +322,5 @@ if __name__ == '__main__':
     #get_prediction()
     #final_prediction = run_gen_model()
     d = datetime(2015,5,31,16,0,0) # start date of evaluation
-    d_new = f'{d.year}-{d.month}-{d.day} {d.hour}:00:00+00:00'
-    print(d_new)
-
     weekly_validation = weekly_validation(d)
     print(weekly_validation)
-    #d = d.replace(minute = 0, second = 0, tzinfo=None)
-    #weekly_validation('2015-05-31 16:00:00+00:00')
-    #date = f'{d.year}-{d.month}-{d.day} {d.hour}:00:00+00:00'
-    #print(d)
-
-
