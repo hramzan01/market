@@ -11,12 +11,13 @@ from cons_model import cons_model
 from energy_price_model import *
 from gen_model_updated import *
 
+global battery_size, battery_charge, time_points
 '''
-Runing all other ML Models
+Runing the final optimiser model
+Improves by using inputs of acorn group, date.
 '''
 
-
-def data_collect(d):
+def data_collect(d, acorn = 'A'):
     '''
     This function takes in the start date of interest
     and collects the predictions from the three other models
@@ -29,15 +30,16 @@ def data_collect(d):
 
     # Run the price model
     price_actual, price_pred = energy_model_run(d, forecast_days = 7)
-    price_actual.rename(columns={'y':'SalePrice_£/kwh'}, inplace= True)
-    price_pred.rename(columns={'yhat':'SalePrice_£/kwh'}, inplace= True)
+    price_actual.rename(columns={'y':'SalePrice_p/kwh'}, inplace= True)
+    price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
 
     # Run the consumption model
-    cons_actual, cons_prediction = cons_model('A', date = d)
+    cons_actual, cons_prediction = cons_model(acorn, date = d)
     cons_actual.rename(columns={'y':'Consumption_kwh'}, inplace= True)
     cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
 
     # Run the Generation model
+    # TODO: input the data for the actual gen data
     gen = run_gen_model()
     gen['ds']=price_actual.reset_index()['ds']
     gen.set_index('ds', inplace = True)
@@ -45,58 +47,48 @@ def data_collect(d):
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
     gen = gen / 150
 
-
-    # TODO: link the generation model here
-    # Removed AEOXLEY
-    #gen = pd.read_csv(f'{os.getcwd()}/raw_data/final_prediction.csv')
-    #gen['ds']=price_actual.reset_index()['ds']
-    #gen.drop(columns = ['Unnamed: 0', 'weather_code'], inplace = True)
-    #gen.set_index('ds', inplace = True)
-    #gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    #gen = gen / 150
-
-
     # Combine the data into an actual dataframe
-    # TODO: concatanate the consumption data. make sure it comes in one dataframe
-    price_buy = (price_actual[['SalePrice_£/kwh']] * 2)
-    price_buy = price_buy.rename(columns={'SalePrice_£/kwh':'PurchasePrice_£/kwh'})
+    price_buy = (price_actual[['SalePrice_p/kwh']] * 2)
+    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
     actual_df = pd.concat([price_actual, price_buy, gen, cons_actual['Consumption_kwh']], axis = 1)
 
     # Combine the data into a predicted dataframe
-    price_buy = (price_pred[['SalePrice_£/kwh']] * 2)
-    price_buy = price_buy.rename(columns={'SalePrice_£/kwh':'PurchasePrice_£/kwh'})
+    price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
+    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
     predicted_df = pd.concat([price_pred, price_buy, cons_prediction], axis = 1)
 
-    # Return the dataframes
+    # Store the data for future use
+    file_path = f'{os.getcwd()}/market/models/model_data.csv'
+    actual_df.to_csv(file_path)
+
+    # Return the final dataframes
     return actual_df, predicted_df
 
 
-def optimiser_model(data):
+def optimiser_model(data, battery_charge, battery_size):
     '''
     A model which takes in a dataframe with the results of three seperate models:
     Energy consumption, PV Energy Gen, Energy Price
     and outputs a prediction based on when to buy and sell
     along with the total profitability of the period
     '''
-    # TODO clean up from notebook form
-
     # Input data must be in the form:
-    # SalePrice_£/kwh	PurchasePrice_£/kwh	Generation_kwh	Consumption_kwh
+    # SalePrice_p/kwh    PurchasePrice_p/kwh    Generation_kwh    Consumption_kwh
+
+    # load data if possible for efficient use:
+    #file_path = f'{os.getcwd()}/market/models/model_data.csv'
+    #data = pd.read_csv(file_path, index_col='ds')
+
     # convert data into numpy array
     df = np.array(data)
-    time_points = 7*24
 
     # set up profit function
     def profit(x_input):
         '''
         Function to be minimised for the optimsation problem
         '''
-        time_points = 7*24
-
-        battery_size = 5 # kwh, max battery charge
-        battery_charge = 1 # kwh, initial battery charge
         cost_punishment = 0 # initial cost punishment
-        cost_punishment_increment = 1000 # £
+        cost_punishment_increment = 1000 # p
 
         x0 = x_input[0:time_points]
         x1 = x_input[time_points:]
@@ -114,16 +106,15 @@ def optimiser_model(data):
         buy = x0[:] * df[:,1]
         sell = x1[:] * df[:,0]
 
-
         cost = np.sum(buy - sell) + cost_punishment
-        battery_charge = battery[time_points] * np.mean(df[i,0])
-        return cost - battery_charge
+        battery_benefit = battery[time_points] * np.mean(df[i,0])
+        return cost - battery_benefit
 
     # x0 = initial purchase amount
     x0 = np.array(df[:,3])
     #x1 = initial sale amount
     x1 =  np.array(df[:,2])
-
+    # Improvement on X0 and X1 initial guesses
     for i in range(168):
         # if generation is more than consumption
         if df[i,2] > df[i,3]:
@@ -136,9 +127,6 @@ def optimiser_model(data):
         else:
             df[i,4] = 0
 
-
-    # x0 is the energy purchased
-    # x1 is the energy sold
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
@@ -148,13 +136,13 @@ def optimiser_model(data):
     # concatanate x0 and x1 for the model
     x_input = np.concatenate((x0,x1),axis=0)
 
-    # run the minimisation
+    # run the minimisation. maxiter = 100000
     res = minimize(
         profit,
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':100000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':10000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -164,15 +152,15 @@ def optimiser_model(data):
         '''
         Function to be minimised for the optimsation problem
         '''
-        time_points = 24*7
+        #time_points = 24*7
         x0 = x_input[0:time_points]
         x1 = x_input[time_points:]
 
         battery = np.zeros(time_points+1)
         # initial battery charge
-        battery[0] = 1
+        battery[0] = battery_charge
         # battery size
-        battery_size = 5
+        #battery_size = 5
         cost_punishment = 0
         for i in range(len(battery)-1):
             battery[i+1] = battery[i] + df[i,2] - df[i,3] + x0[i] - x1[i]
@@ -184,11 +172,11 @@ def optimiser_model(data):
 
 
         cost = np.sum(buy - sell) + cost_punishment
-        battery_charge = battery[time_points] * np.mean(df[i,0])
-        return battery, (cost - battery_charge)
+        battery_benefit = battery[time_points] * np.mean(df[i,0])
+        return battery, (cost - battery_benefit)
 
     # Run the optimsal scenario
-    (battery_store, cost) = battery_storage(res.x)
+    (battery_store, cost_week) = battery_storage(res.x)
 
 
     # Find the energy bought and sold
@@ -223,24 +211,27 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
-def run_full_model(d):
-    actual_df, predicted_df = data_collect(d)
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
-    print('Battery Storage for the week:')
-    print(battery_store)
+def run_full_model(d, battery_size, battery_charge, acorn = 'A') :
+    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
+    #print('Battery Storage for the week:')
+    #print(battery_store)
     print(f'The week cost using our model is £{round(price_week/100,2)}')
     baseline, baseline_price = baseline_model(actual_df)
     print(f'The week cost not using our model is £{round(baseline/100,2)}')
 
-
-if __name__ == '__main__':
-    d = datetime(2024,1,3,18,30,5)
-    run_full_model(d)
-    # To run the model manually:
-    #actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+    #actual_df, predicted_df = data_collect(d, acorn)
     #price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
     #print('Battery Storage for the week:')
     #print(battery_store)
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #baseline, baseline_price = baseline_model(actual_df)
     #print(f'The week cost not using our model is £{round(baseline/100,2)}')
+
+
+if __name__ == '__main__':
+    battery_size = 5
+    battery_charge = 1
+    time_points = 7*24
+    d = datetime(2024,1,3,18,30,5)
+    run_full_model(d, battery_size, battery_charge, acorn='A')
