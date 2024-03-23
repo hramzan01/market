@@ -67,6 +67,13 @@ def predict_gen():
     # Scale features and target
     Xscaler = MinMaxScaler(feature_range=(0, 1))
     Yscaler = MinMaxScaler(feature_range=(0, 1))
+
+
+    # Line added AEOXLEY as approximation to check code
+    #TODO: save the fitted files
+    Xscaler.fit(forecast_values)
+
+
     scaled_forecast = Xscaler.transform(forecast_values)
 
     # Create prediction dataset

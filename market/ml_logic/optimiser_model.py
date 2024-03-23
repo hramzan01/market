@@ -43,12 +43,14 @@ def data_collect(d):
     gen.drop(columns = ['Unnamed: 0', 'weather_code'], inplace = True)
     gen.set_index('ds', inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
+    gen = gen / 150
+
 
     # Combine the data into an actual dataframe
     # TODO: concatanate the consumption data. make sure it comes in one dataframe
     price_buy = (price_actual[['SalePrice_£/kwh']] * 2)
-    price_buy = price_buy.rename(columns={'y':'PurchasePrice_£/kwh'})
-    actual_df = pd.concat([price_actual, price_buy, cons_actual['Consumption_kwh'], gen], axis = 1)
+    price_buy = price_buy.rename(columns={'SalePrice_£/kwh':'PurchasePrice_£/kwh'})
+    actual_df = pd.concat([price_actual, price_buy, gen, cons_actual['Consumption_kwh']], axis = 1)
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_£/kwh']] * 2)
@@ -112,6 +114,19 @@ def optimiser_model(data):
     #x1 = initial sale amount
     x1 =  np.array(df[:,2])
 
+    for i in range(168):
+        # if generation is more than consumption
+        if df[i,2] > df[i,3]:
+           x0[i] = 0
+           x1[i] = df[i,2] - df[i,3]
+        elif df[i,2] < df[i,3]:
+            #loss is from purchase
+            x0[i] = df[i,3] - df[i,2]
+            x1[i] = 0
+        else:
+            df[i,4] = 0
+
+
     # x0 is the energy purchased
     # x1 is the energy sold
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
@@ -129,9 +144,9 @@ def optimiser_model(data):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':500000, 'disp': True}
         )
-    # Work out the maximum profit from the minimisation
+    # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
 
     # ste up function to run the optimal model
@@ -163,14 +178,14 @@ def optimiser_model(data):
         return battery, (cost - battery_charge)
 
     # Run the optimsal scenario
-    (battery_store, profit) = battery_storage(res.x)
+    (battery_store, cost) = battery_storage(res.x)
 
 
     # Find the energy bought and sold
-    energy_bought = res.x[: time_points]
-    energy_sold = res.x[time_points :]
+    price_energy_bought = res.x[: time_points] * df[:,1]
+    price_energy_sold = res.x[time_points :] * df[:,0]
 
-    return price_week, battery_store, energy_bought, energy_sold
+    return price_week, battery_store, price_energy_bought, price_energy_sold
 
 
 def baseline_model(data):
@@ -179,26 +194,33 @@ def baseline_model(data):
     Energy consumption, PV Energy Gen, Energy Price
     and outputs a baseline profitability
     '''
+    # Input data must be in the form:
+    # SalePrice_£/kwh	PurchasePrice_£/kwh	Generation_kwh	Consumption_kwh
+
     df = np.array(data)
     df = np.concatenate((df,np.zeros((168,1))),axis=1)
     for i in range(168):
         # if generation is more than consumption
         if df[i,2] > df[i,3]:
             #profit is from sales
-            df[i,4] = (df[i,2] - df[i,3]) * df[i,0]
+            df[i,4] = (df[i,3] - df[i,2]) * df[i,0]
         elif df[i,2] < df[i,3]:
-            #loss is from purhcase
-            df[i,4] = (df[i,2] - df[i,3]) * df[i,1]
+            #loss is from purchase
+            df[i,4] = (df[i,3] - df[i,2]) * df[i,1]
         else:
             df[i,4] = 0
-    baseline = np.sum(df[:,4])
-    return baseline
+    baseline_price = df[:,4]
+    baseline_cost = np.sum(df[:,4])
+    return baseline_cost, baseline_price
 
 
 if __name__ == '__main__':
     actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
-    print(actual_df)
-    price_week, battery_store, energy_bought, energy_sold = optimiser_model(actual_df)
+    print(actual_df.head(20))
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
     print(price_week)
-    baseline = baseline_model(actual_df)
+    baseline, baseline_price = baseline_model(actual_df)
     print(baseline)
+    print(price_energy_bought)
+    print(price_energy_sold)
+    print(baseline_price)
