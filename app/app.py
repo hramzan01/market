@@ -3,6 +3,7 @@ from streamlit.components.v1 import html
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
+from datetime import datetime
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
@@ -115,8 +116,11 @@ st.header('Form', divider='grey')
 
 Postcode = st.text_input("Postcode", "")
 House_price = st.number_input("House price", step=10000)
-Income = st.number_input("Income")
+Income = st.number_input("Income", step=10000)
+Battery_Size = st.number_input("Battery Size", step=1)
+Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
 House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
+selected_date = st.date_input('Select a date', datetime.today())
 
 selected_option = st.selectbox("Select an option", House_type)
 
