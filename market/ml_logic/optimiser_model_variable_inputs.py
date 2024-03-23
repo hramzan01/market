@@ -1,3 +1,9 @@
+'''
+Runing the final optimiser model
+Improves by using inputs of acorn group, date.
+'''
+
+# Imports
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
@@ -6,16 +12,12 @@ from datetime import datetime
 from datetime import timedelta
 import os
 
-
 from cons_model import cons_model
 from energy_price_model import *
 from gen_model_updated import *
 
 global battery_size, battery_charge, time_points
-'''
-Runing the final optimiser model
-Improves by using inputs of acorn group, date.
-'''
+
 
 def data_collect(d, acorn = 'A'):
     '''
@@ -55,7 +57,7 @@ def data_collect(d, acorn = 'A'):
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
     price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
-    predicted_df = pd.concat([price_pred, price_buy, cons_prediction], axis = 1)
+    predicted_df = pd.concat([price_pred, price_buy, gen, cons_prediction], axis = 1)
 
     # Store the data for future use
     file_path = f'{os.getcwd()}/market/models/model_data.csv'
@@ -75,7 +77,7 @@ def optimiser_model(data, battery_charge, battery_size):
     # Input data must be in the form:
     # SalePrice_p/kwh    PurchasePrice_p/kwh    Generation_kwh    Consumption_kwh
 
-    # load data if possible for efficient use:
+    # load data if using repeatedly for efficient use:
     #file_path = f'{os.getcwd()}/market/models/model_data.csv'
     #data = pd.read_csv(file_path, index_col='ds')
 
@@ -110,10 +112,9 @@ def optimiser_model(data, battery_charge, battery_size):
         battery_benefit = battery[time_points] * np.mean(df[i,0])
         return cost - battery_benefit
 
-    # x0 = initial purchase amount
-    x0 = np.array(df[:,3])
-    #x1 = initial sale amount
-    x1 =  np.array(df[:,2])
+    # Model set up
+    x0 = np.array(df[:,3]) # initial purchase amount
+    x1 =  np.array(df[:,2]) # initial sale amount
     # Improvement on X0 and X1 initial guesses
     for i in range(168):
         # if generation is more than consumption
@@ -126,17 +127,16 @@ def optimiser_model(data, battery_charge, battery_size):
             x1[i] = 0
         else:
             df[i,4] = 0
-
+    # Set bounds
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
     ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
     bounds = Bounds(lb=lb, ub=ub)
-
     # concatanate x0 and x1 for the model
     x_input = np.concatenate((x0,x1),axis=0)
 
-    # run the minimisation. maxiter = 100000
+    # Model Run: minimisation. maxiter = 100000.
     res = minimize(
         profit,
         x_input,
@@ -152,32 +152,23 @@ def optimiser_model(data, battery_charge, battery_size):
         '''
         Function to be minimised for the optimsation problem
         '''
-        #time_points = 24*7
+        # initialise
         x0 = x_input[0:time_points]
         x1 = x_input[time_points:]
-
         battery = np.zeros(time_points+1)
-        # initial battery charge
         battery[0] = battery_charge
-        # battery size
-        #battery_size = 5
-        cost_punishment = 0
+        # Calculate battery level, buy amount, sell amount
         for i in range(len(battery)-1):
             battery[i+1] = battery[i] + df[i,2] - df[i,3] + x0[i] - x1[i]
-            if battery[i + 1] > battery_size:
-                cost_punishment += 1000
-
         buy = x0[:] * df[:,1]
         sell = x1[:] * df[:,0]
-
-
-        cost = np.sum(buy - sell) + cost_punishment
+        # Work out final profit
+        cost = np.sum(buy - sell)
         battery_benefit = battery[time_points] * np.mean(df[i,0])
-        return battery, (cost - battery_benefit)
+        return battery
 
-    # Run the optimsal scenario
-    (battery_store, cost_week) = battery_storage(res.x)
-
+    # Run the optimal scenario
+    battery_store = battery_storage(res.x)
 
     # Find the energy bought and sold
     price_energy_bought = res.x[: time_points] * df[:,1]
@@ -211,8 +202,8 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
-def run_full_model(d, battery_size, battery_charge, acorn = 'A') :
-    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+def run_full_model(d, battery_size, battery_charge, acorn = 'A'):
+    actual_df, predicted_df = data_collect(d)
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
     #print('Battery Storage for the week:')
     #print(battery_store)
@@ -228,10 +219,22 @@ def run_full_model(d, battery_size, battery_charge, acorn = 'A') :
     #baseline, baseline_price = baseline_model(actual_df)
     #print(f'The week cost not using our model is £{round(baseline/100,2)}')
 
+def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
+    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+    # Use actual data
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
+    # Use predicted data
+    price_week_pred, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
+    # evaluate error
+    abs_error = abs(price_week - price_week_pred)/100
+    return abs_error
+
 
 if __name__ == '__main__':
-    battery_size = 5
-    battery_charge = 1
-    time_points = 7*24
-    d = datetime(2024,1,3,18,30,5)
-    run_full_model(d, battery_size, battery_charge, acorn='A')
+    battery_size = 5 # total size
+    battery_charge = 1 # initial charge amount
+    time_points = 7*24 # hours
+    d = datetime(2024,1,3,18,30,5) # start date fo evaluation
+    #run_full_model(d, battery_size, battery_charge, acorn='A')
+    abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
+    print(f'Absolute error is £{abs_error}')
