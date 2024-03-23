@@ -290,7 +290,7 @@ if __name__ == '__main__':
     price_week, price_week_pred, abs_error, pdiff = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
     print(f'Absolute error is £{abs_error}')
     print(f'Percentage accuracy is {pdiff}%')
-    print(f'Actual priceis £{price_week}')
+    print(f'Actual price is £{price_week}')
 
     print(f'The week cost using our model is £{round(price_week_total/100,2)}')
     print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
