@@ -8,6 +8,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import warnings
 from datetime import datetime
+from datetime import timedelta
 warnings.simplefilter('ignore')
 
 n_input = 24
@@ -295,8 +296,19 @@ def weekly_validation(d):
 
     df_validation['date'] = training_sample.timestamp[:limiter]
     df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
-
+    print(len(df_validation))
     print(df_validation.head(10))
+
+    first_date = df_validation['date'].iloc[0]
+    last_date = df_validation['date'].iloc[len(df_validation['date'])-1]
+    diff_s = (last_date - first_date).total_seconds()
+    hours = divmod(diff_s, 3600)[0]
+
+    print(first_date)
+    print(last_date)
+    print(diff_s)
+    print(hours)
+    # TODO make full time dateaframe so that all dates in range will match
 
     index_ = df_validation[df_validation['date'] == d].index.item()
     print(index_)
