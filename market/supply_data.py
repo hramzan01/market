@@ -114,7 +114,7 @@ def get_training_data():
 
     y = training_sample['generation_wh'].values
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
 
     # Step 2: Scale features
@@ -155,10 +155,11 @@ def get_training_data():
     test_dataset = create_dataset(scaled_X_test, scaled_y_test, length=n_input, batch_size=batch_size)
 
     print('--training data loaded--')
-    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
+    
+    return training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
 
 def train_model():
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -187,7 +188,7 @@ def get_prediction():
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
     # Load the model params and model
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
 
     def custom_activation(x):
         return tf.maximum(x, 0)
@@ -251,6 +252,43 @@ def get_prediction():
     print(final_prediction)
     return final_prediction
 
+def weekly_validation(d):
+    '''
+    define 7 days period for validation based on custom date
+    '''
+    # pass in variables for other functions
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    
+    # get predictions from model
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+    
+    model = tf.keras.models.load_model("models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
+    predictions = model.predict(test_dataset)
+
+    # define y actual and y pred
+    # Step 7: Inverse transform predictions and true values
+    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
+    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
+    
+    # Use limiter so that length of pred and actual match
+    limiter = len(predictions_inverse)
+    df_validation = pd.DataFrame(
+        {'test': scaled_y_test_inverse[:limiter],
+        'predict': predictions_inverse}
+    )
+
+    df_validation['date'] = training_sample.timestamp[:limiter]
+    
+    # Allow for variable d to define date
+    index = df_validation[df_validation['date'] == d].index.item()
+
+    # Select the next 7 rows from the matched index
+    weekly_validation = df_validation.iloc[index:index+7]
+    print(weekly_validation.head())
+    return weekly_validation
+       
+    
 if __name__ == '__main__':
     ''''
     Uncomment required steps
@@ -259,4 +297,5 @@ if __name__ == '__main__':
     # append_weather_params()
     # get_training_data()
     # train_model()
-    get_prediction()
+    # get_prediction()
+    weekly_validation('2015-05-31 16:00:00+00:00')
