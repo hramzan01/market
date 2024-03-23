@@ -83,7 +83,7 @@ def append_weather_params():
 
     return df_merged
 
-def get_training_data():
+def get_training_data(starting_index  ):
     '''
     function preprocesses the feature engineered dataset to be passed into RNN model
     '''
@@ -165,6 +165,8 @@ def get_training_data():
 
 def train_model():
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
+
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -194,6 +196,7 @@ def get_prediction():
     '''
     # Load the model params and model
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
 
     def custom_activation(x):
         return tf.maximum(x, 0)
@@ -302,6 +305,29 @@ def weekly_validation(d):
 
 # print('printing', weekly_validation(datetime(2019,1,3,18,0,0)))
 
+
+
+
+# IN progress AEOXLEY
+def get_weekly_prediction(d):
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+    # load the model
+    file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
+    loaded_model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
+
+    predictions = loaded_model.predict(test_dataset)
+    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
+    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
+
+    return scaled_y_test_inverse, predictions_inverse
+
+
+
+
+
+
 def run_gen_model():
     final_prediction = get_prediction()
     return final_prediction
@@ -327,3 +353,5 @@ if __name__ == '__main__':
     #weekly_validation('2015-05-31 16:00:00+00:00')
     #date = f'{d.year}-{d.month}-{d.day} {d.hour}:00:00+00:00'
     #print(d)
+
+

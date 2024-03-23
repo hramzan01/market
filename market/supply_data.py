@@ -7,7 +7,10 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import warnings
+from datetime import datetime
 warnings.simplefilter('ignore')
+test_date = datetime(2015, 5, 31, 16, 0, 0)
+
 
 n_input = 24
 batch_size = 64
@@ -141,7 +144,6 @@ def get_training_data():
     n_input = 24  # Number of samples/rows/timesteps to look in the past to forecast the next sample
     batch_size = 64  # Number of timeseries samples in each batch
     
-
     def create_dataset(X, y, length, batch_size):
         dataset = tf.data.Dataset.from_tensor_slices((X, y))
         dataset = dataset.window(length, shift=1, drop_remainder=True)
@@ -174,7 +176,7 @@ def train_model():
     model.compile(loss='mse', optimizer='adam')
 
     # Fit
-    model.fit(train_dataset, epochs=5, verbose=0)
+    model.fit(train_dataset, epochs=8, verbose=0)
     print('--model trained sucessfuly--')
     
     # Save the model
@@ -273,12 +275,14 @@ def weekly_validation(d):
     
     # Use limiter so that length of pred and actual match
     limiter = len(predictions_inverse)
+
     df_validation = pd.DataFrame(
-        {'test': scaled_y_test_inverse[:limiter],
-        'predict': predictions_inverse}
+        {'test': scaled_y_test_inverse[:limiter].round(0),
+        'predict': predictions_inverse.round(0)}
     )
 
     df_validation['date'] = training_sample.timestamp[:limiter]
+    df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
     
     # Allow for variable d to define date
     index = df_validation[df_validation['date'] == d].index.item()
@@ -298,4 +302,4 @@ if __name__ == '__main__':
     # get_training_data()
     # train_model()
     # get_prediction()
-    weekly_validation('2015-05-31 16:00:00+00:00')
+    weekly_validation(test_date)
