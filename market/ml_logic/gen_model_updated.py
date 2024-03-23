@@ -82,7 +82,7 @@ def append_weather_params():
 
     return df_merged
 
-def get_training_data():
+def get_training_data(starting_index  ):
     '''
     function preprocesses the feature engineered dataset to be passed into RNN model
     '''
@@ -158,10 +158,10 @@ def get_training_data():
     test_dataset = create_dataset(scaled_X_test, scaled_y_test, length=n_input, batch_size=batch_size)
 
     print('--training data loaded--')
-    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
+    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test
 
 def train_model():
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -190,7 +190,7 @@ def get_prediction():
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
     # Load the model params and model
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
 
     def custom_activation(x):
         return tf.maximum(x, 0)
@@ -259,6 +259,28 @@ def get_prediction():
     print(final_prediction)
     return final_prediction
 
+
+
+
+# IN progress AEOXLEY
+def get_weekly_prediction(d):
+    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+    # load the model
+    file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
+    loaded_model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
+
+    predictions = loaded_model.predict(test_dataset)
+    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
+    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
+
+    return scaled_y_test_inverse, predictions_inverse
+
+
+
+
+
 def run_gen_model():
     final_prediction = get_prediction()
     return final_prediction
@@ -272,4 +294,9 @@ if __name__ == '__main__':
     #get_training_data()
     # train_model()
     #get_prediction()
-    final_prediction = run_gen_model()
+    #final_prediction = run_gen_model()
+    d = 1
+    scaled_y_test_inverse, predictions_inverse = get_weekly_prediction(d)
+    #scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler, scaled_y_test = get_training_data()
+    print(len(scaled_y_test_inverse))
+    print(len(predictions_inverse))
