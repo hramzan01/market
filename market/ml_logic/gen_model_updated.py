@@ -7,6 +7,7 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import warnings
+from datetime import datetime
 warnings.simplefilter('ignore')
 
 n_input = 24
@@ -89,7 +90,8 @@ def get_training_data():
     # define training data of all properties
     file_path = f'{os.getcwd()}/market/models/ldn_energy_supply.csv'
     training_data = pd.read_csv(file_path)
-    # line removed AEOXLEY
+
+    # Line removed
     #training_data = pd.read_csv('data/processed_data/ldn_energy_supply.csv')
 
     # define sample set of 1 property
@@ -117,7 +119,7 @@ def get_training_data():
 
     y = training_sample['generation_wh'].values
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
 
     # Step 2: Scale features
@@ -158,10 +160,11 @@ def get_training_data():
     test_dataset = create_dataset(scaled_X_test, scaled_y_test, length=n_input, batch_size=batch_size)
 
     print('--training data loaded--')
-    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
+
+    return training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
 
 def train_model():
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -190,7 +193,7 @@ def get_prediction():
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
     # Load the model params and model
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
 
     def custom_activation(x):
         return tf.maximum(x, 0)
@@ -255,13 +258,54 @@ def get_prediction():
         'weather_code',
         'kwh'
     ]]
-
     print(final_prediction)
     return final_prediction
+
+def weekly_validation(d):
+    '''
+    define 7 days period for validation based on custom date
+    '''
+    # pass in variables for other functions
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
+    # get predictions from model
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+
+    # load the model
+    file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
+    model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
+    #model = tf.keras.models.load_model("models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
+    predictions = model.predict(test_dataset)
+
+    # define y actual and y pred
+    # Step 7: Inverse transform predictions and true values
+    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
+    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
+
+    # Use limiter so that length of pred and actual match
+    limiter = len(predictions_inverse)
+    df_validation = pd.DataFrame(
+        {'test': scaled_y_test_inverse[:limiter],
+        'predict': predictions_inverse}
+    )
+
+    df_validation['date'] = training_sample.timestamp[:limiter]
+    df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
+
+    index_ = df_validation[df_validation['date'] == d].index.item()
+    print(index_)
+    # Select the next 7 rows from the matched index
+    weekly_validation = df_validation.iloc[index_:index_+168]
+
+    return weekly_validation
+
+# print('printing', weekly_validation(datetime(2019,1,3,18,0,0)))
 
 def run_gen_model():
     final_prediction = get_prediction()
     return final_prediction
+
 
 if __name__ == '__main__':
     ''''
@@ -272,4 +316,14 @@ if __name__ == '__main__':
     #get_training_data()
     # train_model()
     #get_prediction()
-    final_prediction = run_gen_model()
+    #final_prediction = run_gen_model()
+    d = datetime(2015,5,31,16,0,0) # start date of evaluation
+    d_new = f'{d.year}-{d.month}-{d.day} {d.hour}:00:00+00:00'
+    print(d_new)
+
+    weekly_validation = weekly_validation(d)
+    print(weekly_validation)
+    #d = d.replace(minute = 0, second = 0, tzinfo=None)
+    #weekly_validation('2015-05-31 16:00:00+00:00')
+    #date = f'{d.year}-{d.month}-{d.day} {d.hour}:00:00+00:00'
+    #print(d)
