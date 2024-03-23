@@ -16,6 +16,9 @@ from cons_model import cons_model
 from energy_price_model import *
 from gen_model_updated import *
 
+import warnings
+warnings.simplefilter('ignore')
+
 global battery_size, battery_charge, time_points
 
 
@@ -210,11 +213,8 @@ def run_full_model(d, battery_size, battery_charge, acorn = 'A'):
     '''
     actual_df, predicted_df = data_collect(d)
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
-    #print('Battery Storage for the week:')
-    #print(battery_store)
-    print(f'The week cost using our model is £{round(price_week/100,2)}')
-    baseline, baseline_price = baseline_model(actual_df)
-    print(f'The week cost not using our model is £{round(baseline/100,2)}')
+    baseline_cost, baseline_price = baseline_model(actual_df)
+    return price_week, baseline_cost
 
 
 def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
@@ -237,6 +237,12 @@ if __name__ == '__main__':
     battery_charge = 1 # initial charge amount
     time_points = 7*24 # hours
     d = datetime(2024,1,3,18,30,5) # start date fo evaluation
-    #run_full_model(d, battery_size, battery_charge, acorn='A')
-    abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
-    print(f'Absolute error is £{abs_error}')
+
+    # To run full model
+    price_week, baseline_cost = run_full_model(d, battery_size, battery_charge, acorn='A')
+    print(f'The week cost using our model is £{round(price_week/100,2)}')
+    print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
+
+    # To evaluate model
+    #abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
+    #print(f'Absolute error is £{abs_error}')
