@@ -203,6 +203,11 @@ def baseline_model(data):
     return baseline_cost, baseline_price
 
 def run_full_model(d, battery_size, battery_charge, acorn = 'A'):
+    '''
+    This function runs the full model and for optimising profit
+    The model outputs the cost for one week based on the optimised scenario
+    And outputs the cost for one week for the baseline scenario
+    '''
     actual_df, predicted_df = data_collect(d)
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
     #print('Battery Storage for the week:')
@@ -211,15 +216,12 @@ def run_full_model(d, battery_size, battery_charge, acorn = 'A'):
     baseline, baseline_price = baseline_model(actual_df)
     print(f'The week cost not using our model is £{round(baseline/100,2)}')
 
-    #actual_df, predicted_df = data_collect(d, acorn)
-    #price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
-    #print('Battery Storage for the week:')
-    #print(battery_store)
-    #print(f'The week cost using our model is £{round(price_week/100,2)}')
-    #baseline, baseline_price = baseline_model(actual_df)
-    #print(f'The week cost not using our model is £{round(baseline/100,2)}')
 
 def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
+    '''
+    This function runs the full model and for optimising profit
+    and compares the output to the optimisation data based on the real data
+    '''
     actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
     # Use actual data
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
