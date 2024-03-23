@@ -231,6 +231,27 @@ def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
     abs_error = abs(price_week - price_week_pred)/100
     return abs_error
 
+def run_full_model_api(d, battery_size, battery_charge, acorn = 'A'):
+    '''
+    This function runs the full model and for optimising profit
+    The model outputs the cost for one week based on the optimised scenario
+    And outputs the cost for one week for the baseline scenario for the api
+    '''
+    actual_df, predicted_df = data_collect(d)
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
+    baseline_cost, baseline_price = baseline_model(actual_df)
+
+    # format the data for the api
+    api_output = {
+        'predicted_data':predicted_df,
+        'predicted_hourly_price':price_week,
+        'optimised_battery_storage':battery_store,
+        'optimised_energy_purchase_price':price_energy_bought,
+        'optimised_energy_sold_price':price_energy_sold,
+        'baseline_cost':baseline_cost,
+        'baseline_hourly_price':baseline_price
+    }
+    return api_output
 
 if __name__ == '__main__':
     battery_size = 5 # total size
