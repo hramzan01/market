@@ -5,11 +5,12 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
 from PIL import Image
+from streamlit_option_menu import option_menu
 import os
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
-
+# Background
 st.markdown(
 
     """
@@ -28,17 +29,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-
-
-# Scrolling battery
-st.markdown(
-    """
-    <div id="progress" style="background-color: #ddd; height: 20px; width: 10px;"></div>
-    """,
-    unsafe_allow_html=True
-)
-
 html_code = """
 <!DOCTYPE html>
 <html lang="en">
@@ -86,7 +76,6 @@ html_code = """
     });
 </script>
 """
-
 st.markdown(html_code, unsafe_allow_html=True)
 
 # HOME: MARKET logo
@@ -116,21 +105,21 @@ st.markdown('')  # Empty markdown line for spacing
 st.markdown('')  # Empty markdown line for spacing
 st.markdown('')  # Empty markdown line for spacing
 st.markdown('')  # Empty markdown line for spacing
-st.header('About', divider='grey')
 
 
 # ABOUT: brief description
+st.header('What is Market', divider='grey')
 st.subheader("""Empowerment: 💪""", anchor='center')
 st.write("""
 Empower users to participate in renewable energy ownership, promoting sustainability and community engagement.
-""")
+""", align='center')
 st.subheader("""Optimization: ⏱️""")
 st.write("""
 Optimize users' trading decisions by leveraging weather forecasts and solar energy output predictions to maximize profitability.
 """)
 st.subheader("""Accessibility:🤙""")
 st.write("""
-         Make renewable energy trading accessible to all, regardless of technical expertise and type of accomodation.
+        Make renewable energy trading accessible to all, regardless of technical expertise and type of accomodation.
 """)
 
 # INPUT: user variable (or create your custom profile)
