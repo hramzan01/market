@@ -12,15 +12,16 @@ from datetime import datetime
 from datetime import timedelta
 import os
 
-from cons_model import cons_model
-from energy_price_model import *
-from gen_model_updated import *
+from market.ml_logic.cons_model import cons_model
+from market.ml_logic.energy_price_model import *
+from market.ml_logic.gen_model_updated import *
 
 import warnings
 warnings.simplefilter('ignore')
 
 global battery_size, battery_charge, time_points
 
+time_points=7*24 # added by Rahul to test API
 
 def data_collect(d, acorn = 'A'):
     '''
@@ -245,11 +246,11 @@ def run_full_model_api(d, battery_size, battery_charge, acorn = 'A'):
     api_output = {
         'predicted_data':predicted_df,
         'predicted_hourly_price':price_week,
-        'optimised_battery_storage':battery_store,
-        'optimised_energy_purchase_price':price_energy_bought,
-        'optimised_energy_sold_price':price_energy_sold,
+        'optimised_battery_storage':battery_store.tolist(),
+        'optimised_energy_purchase_price':price_energy_bought.tolist(),
+        'optimised_energy_sold_price':price_energy_sold.tolist(),
         'baseline_cost':baseline_cost,
-        'baseline_hourly_price':baseline_price
+        'baseline_hourly_price':baseline_price.tolist()
     }
     return api_output
 
