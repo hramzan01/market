@@ -5,6 +5,9 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
 
+# import datetime
+import requests
+
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
 
@@ -114,21 +117,51 @@ st.write("""
 
 st.header('Form', divider='grey')
 
-Postcode = st.text_input("Postcode", "")
-House_price = st.number_input("House price", step=10000)
-Income = st.number_input("Income", step=10000)
-Battery_Size = st.number_input("Battery Size", step=1)
-Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
-House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
-selected_date = st.date_input('Select a date', datetime.today())
+with st.form(key='params_for_api'):
+    Postcode = st.text_input("Postcode", "")
+    House_price = st.number_input("House price", step=10000)
+    Income = st.number_input("Income", step=10000)
+    Battery_Size = st.number_input("Battery Size", step=1)
+    Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
+    House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
+    selected_date = st.date_input('Select a date', datetime.today())
 
-selected_option = st.selectbox("Select an option", House_type)
+    selected_option = st.selectbox("Select an option", House_type)
 
-st.button("Submit")
+    ########Test_API_predict
+    params = {
+        'date': f'{selected_date} 00:00:00',
+        'battery_size': Battery_Size,
+        'battery_charge': Battery_Charge
+    }
+
+    api_url = 'http://127.0.0.1:8000/predict'
+    # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
+
+    complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
+
+    st.write(f'params passed to API are {selected_date}, {Battery_Size}, and {Battery_Charge}')
+
+    st.write(f'complete url is {complete_url}')
+
+    # if st.form_submit_button('Submit'):
+    #     response = requests.get(api_url, params=params)
+    #     prediction = response.json()
+    #     st.write(prediction)
+
+    if st.form_submit_button('Submit'):
+        response = requests.get(api_url, params=params)
+        prediction = response.json()
+        st.write(prediction)
+
+
+
+########
+
 
 st.header('Your Output', divider='grey')
 day = st.slider("Select Days", 1,7,1)
-data = pd.read_csv("/home/freddieoxland/code/hramzan01/market/notebooks/data/final_prediction.csv")
+# data = pd.read_csv("/home/freddieoxland/code/hramzan01/market/notebooks/data/final_prediction.csv")
 
 # Create a Plotly figure
 fig = go.Figure()
