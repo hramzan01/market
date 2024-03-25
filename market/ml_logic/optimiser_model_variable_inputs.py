@@ -12,6 +12,7 @@ from scipy.optimize import Bounds
 from datetime import datetime
 from datetime import timedelta
 import os
+import time
 
 from cons_model import *
 from energy_price_model import *
@@ -282,7 +283,7 @@ def run_full_model_unsaved(battery_size = 10, battery_charge = 1, acorn = 'A'):
     return price_week, baseline_cost
 
 
-def run_full_model_saved(d, battery_size=10, battery_charge=1, acorn = 'A'):
+def run_full_model_saved(battery_size=10, battery_charge=1, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -315,7 +316,7 @@ def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
     return abs_error
 
 
-def run_full_model_api_unsaved(d, battery_size, battery_charge, acorn = 'A'):
+def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -346,7 +347,7 @@ def run_full_model_api_unsaved(d, battery_size, battery_charge, acorn = 'A'):
     return api_output
 
 
-def run_full_model_api(d, battery_size, battery_charge, acorn = 'A'):
+def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -388,7 +389,11 @@ if __name__ == '__main__':
     #d = datetime(2024,3,15,18,30,5) # start date fo evaluation
 
     #price_week, baseline_cost = run_full_model_unsaved()
+    start = time.time()
     price_week, baseline_cost = run_full_model_saved()
+    end = time.time()
+
+    print(f'The model took {end - start} seconds to run')
 
 
     # To run full model
