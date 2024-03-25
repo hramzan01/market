@@ -8,6 +8,12 @@ from prophet.diagnostics import cross_validation, performance_metrics
 from prophet.plot import plot_cross_validation_metric
 from prophet.serialize import model_to_json, model_from_json
 
+# Stop Prophet outputting lots of information
+import logging
+logger = logging.getLogger('cmdstanpy')
+logger.addHandler(logging.NullHandler())
+logger.propagate = False
+logger.setLevel(logging.CRITICAL)
 
 def cons_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     '''
@@ -82,7 +88,7 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
 
     # Preprocess date to reset minutes and sceonds to 0
     # TODO change datetime from 2013 if needed
-    d = datetime(2013, date.month, date.day, date.hour, 0, 0)
+    d = datetime(2013, date.month, date.day, date.hour + 1, 0, 0)
 
     # Processing input data for profit
     # TODO: update data processing so data comes into the model in the right format
@@ -107,7 +113,7 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     # Create Prophet model
     m = Prophet()
     m.fit(X_train)
-    print('Energy consumption model created')
+    print('Energy consumption model saved')
 
     with open('market/models/consumption_model.json', 'w') as fout:
         fout.write(model_to_json(m))  # Save model
@@ -144,4 +150,3 @@ if __name__ == '__main__':
     d = date=datetime(2018,5,6,18,0,0)
     cons_save_model('A', date=d)
     prediction = cons_load_model(date=d, forecasted_days = 7)
-    print(prediction)
