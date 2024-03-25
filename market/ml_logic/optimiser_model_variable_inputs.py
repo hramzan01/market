@@ -12,9 +12,9 @@ from datetime import datetime
 from datetime import timedelta
 import os
 
-from market.ml_logic.cons_model import cons_model
+from market.ml_logic.cons_model import *
 from market.ml_logic.energy_price_model import *
-from market.ml_logic.gen_model_updated import *
+from market.ml_logic.gen_model_efficient import *
 
 import warnings
 warnings.simplefilter('ignore')
