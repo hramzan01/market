@@ -24,53 +24,53 @@ warnings.simplefilter('ignore')
 global battery_size, battery_charge, time_points
 
 
-def data_collect(d, acorn = 'A'):
-    '''
-    This function takes in the start date of interest
-    and collects the predictions from the three other models
-    Energy consumption, PV Energy Gen, Energy Price
-    The function outputs two pandas dataframes
-    One dateaframe for the actual data and one dataframe for the predicted data
-    This function has been replaced by data_collect_save_models adn prediction
-    '''
-    # Format input date to be an hourly date
-    d=d.replace(minute = 0, second = 0)
-
-    # Run the price model
-    price_actual, price_pred = energy_model_run(d, forecast_days = 7)
-    price_actual.rename(columns={'y':'SalePrice_p/kwh'}, inplace= True)
-    price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
-
-    # Run the consumption model
-    cons_actual, cons_prediction = cons_model(acorn, date = d)
-    cons_actual.rename(columns={'y':'Consumption_kwh'}, inplace= True)
-    cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
-
-    # Run the Generation model
-    # TODO: input the data for the actual gen data
-    gen = run_gen_model()
-    gen['ds']=price_actual.reset_index()['ds']
-    gen.set_index('ds', inplace = True)
-    gen.drop(columns = ['weather_code'], inplace = True)
-    gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    gen = gen / 150
-
-    # Combine the data into an actual dataframe
-    price_buy = (price_actual[['SalePrice_p/kwh']] * 2)
-    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
-    actual_df = pd.concat([price_actual, price_buy, gen, cons_actual['Consumption_kwh']], axis = 1)
-
-    # Combine the data into a predicted dataframe
-    price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
-    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
-    predicted_df = pd.concat([price_pred, price_buy, gen, cons_prediction], axis = 1)
-
-    # Store the data for future use
-    file_path = f'{os.getcwd()}/market/models/model_data.csv'
-    actual_df.to_csv(file_path)
-
-    # Return the final dataframes
-    return actual_df, predicted_df
+#def data_collect(d, acorn = 'A'):
+#    '''
+#    This function takes in the start date of interest
+#    and collects the predictions from the three other models
+#    Energy consumption, PV Energy Gen, Energy Price
+#    The function outputs two pandas dataframes
+#    One dateaframe for the actual data and one dataframe for the predicted data
+#    This function has been replaced by data_collect_save_models adn prediction
+#    '''
+#    # Format input date to be an hourly date
+#    d=d.replace(minute = 0, second = 0)
+#
+#    # Run the price model
+#    price_actual, price_pred = energy_model_run(d, forecast_days = 7)
+#    price_actual.rename(columns={'y':'SalePrice_p/kwh'}, inplace= True)
+#    price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
+#
+#    # Run the consumption model
+#    cons_actual, cons_prediction = cons_model(acorn, date = d)
+#    cons_actual.rename(columns={'y':'Consumption_kwh'}, inplace= True)
+#    cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
+#
+#    # Run the Generation model
+#    # TODO: input the data for the actual gen data
+#    gen = run_gen_model()
+#    gen['ds']=price_actual.reset_index()['ds']
+#    gen.set_index('ds', inplace = True)
+#    gen.drop(columns = ['weather_code'], inplace = True)
+#    gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
+#    gen = gen / 150
+#
+#    # Combine the data into an actual dataframe
+#    price_buy = (price_actual[['SalePrice_p/kwh']] * 2)
+#    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
+#    actual_df = pd.concat([price_actual, price_buy, gen, cons_actual['Consumption_kwh']], axis = 1)
+#
+#    # Combine the data into a predicted dataframe
+#    price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
+#    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
+#    predicted_df = pd.concat([price_pred, price_buy, gen, cons_prediction], axis = 1)
+#
+#    # Store the data for future use
+#    file_path = f'{os.getcwd()}/market/models/model_data.csv'
+#    actual_df.to_csv(file_path)
+#
+#    # Return the final dataframes
+#    return actual_df, predicted_df
 
 
 def data_collect_save_models(d, acorn = 'A'):
@@ -301,19 +301,19 @@ def run_full_model_saved(battery_size=10, battery_charge=1, acorn = 'A'):
     return price_week, baseline_cost
 
 
-def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
-    '''
-    This function runs the full model and for optimising profit
-    and compares the output to the optimisation data based on the real data
-    '''
-    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
-    # Use actual data
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
-    # Use predicted data
-    price_week_pred, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
-    # evaluate error
-    abs_error = abs(price_week - price_week_pred)/100
-    return abs_error
+#def evaluate_full_model(d, battery_size, battery_charge, acorn = 'A'):
+#    '''
+#    This function runs the full model and for optimising profit
+#    and compares the output to the optimisation data based on the real data
+#    '''
+#    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+#    # Use actual data
+#    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
+#    # Use predicted data
+#    price_week_pred, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
+#    # evaluate error
+#    abs_error = abs(price_week - price_week_pred)/100
+#    return abs_error
 
 
 def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
@@ -386,7 +386,7 @@ if __name__ == '__main__':
     time_points = 7*24 # hours
 
 
-    #d = datetime(2024,3,15,18,30,5) # start date fo evaluation
+    #d = datetime(2024,3,15,18,30,5) # start date of evaluation
 
     #price_week, baseline_cost = run_full_model_unsaved()
     start = time.time()
