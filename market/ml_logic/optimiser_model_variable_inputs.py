@@ -1,6 +1,7 @@
 '''
 Runing the final optimiser model
 Improves by using inputs of acorn group, date.
+Just runs a prediction
 '''
 
 # Imports
@@ -12,9 +13,9 @@ from datetime import datetime
 from datetime import timedelta
 import os
 
-from cons_model import cons_model
+from cons_model import *
 from energy_price_model import *
-from gen_model_updated import *
+from gen_model_efficient import *
 
 import warnings
 warnings.simplefilter('ignore')
@@ -68,6 +69,57 @@ def data_collect(d, acorn = 'A'):
 
     # Return the final dataframes
     return actual_df, predicted_df
+
+
+def data_collect_model_saving(d, acorn = 'A'):
+    '''
+    This function runs the models and saves the data for a given date
+    '''
+    d=d.replace(minute = 0, second = 0)
+    cons_save_model(X ='A', date=d)
+    price_save_model(date = d, forecast_days = 7)
+    # TODO add energy generationmodel saving here
+
+
+def data_collect_prediction_only(d_input, acorn = 'A'):
+    '''
+    This function takes in the start date of interest
+    and collects the predictions from the three other models
+    Energy consumption, PV Energy Gen, Energy Price
+    The function outputsthe predicted data
+    '''
+    # Format input date to be an hourly date
+    d=d_input.replace(minute = 0, second = 0)
+
+    # Run the price model
+    price_pred = price_load_model(d, forecast_days = 7)
+    price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
+
+    # Run the consumption model
+    cons_prediction = cons_load_model(d, forecasted_days = 7)
+    cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
+
+    # Run the Generation model
+    gen = get_prediction()
+    gen['ds']=price_pred.reset_index()['ds']
+    gen.set_index('ds', inplace = True)
+    gen.drop(columns = ['weather_code'], inplace = True)
+    gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
+    gen = gen / 150
+
+    # Combine the data into a predicted dataframe
+    price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
+    price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
+    predicted_df = pd.concat([price_pred, price_buy, gen, cons_prediction], axis = 1)
+
+    # Store the data for future use
+    file_path = f'{os.getcwd()}/market/models/model_data.csv'
+    predicted_df.to_csv(file_path)
+
+    # Return the final dataframes
+    return predicted_df
+
+
 
 
 def optimiser_model(data, battery_charge, battery_size):
@@ -145,7 +197,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':10000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':500000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -257,13 +309,21 @@ if __name__ == '__main__':
     battery_size = 5 # total size
     battery_charge = 1 # initial charge amount
     time_points = 7*24 # hours
-    d = datetime(2024,1,3,18,30,5) # start date fo evaluation
+    d = datetime(2024,3,15,18,30,5) # start date fo evaluation
 
     # To run full model
-    price_week, baseline_cost = run_full_model(d, battery_size, battery_charge, acorn='A')
-    print(f'The week cost using our model is £{round(price_week/100,2)}')
-    print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
+    #price_week, baseline_cost = run_full_model(d, battery_size, battery_charge, acorn='A')
+    #print(f'The week cost using our model is £{round(price_week/100,2)}')
+    #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
 
     # To evaluate model
     #abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
     #print(f'Absolute error is £{abs_error}')
+
+    # To run just the model for data prediction
+    #data_collect_model_saving(d, acorn = 'A')
+    predicted_df = data_collect_prediction_only(d, acorn = 'A')
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df, battery_charge, battery_size)
+    baseline_cost, baseline_price = baseline_model(predicted_df)
+    print(f'The week cost using our model is £{round(price_week/100,2)}')
+    print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')

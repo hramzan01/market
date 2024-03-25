@@ -87,7 +87,7 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
     test = df_price.iloc[split_index:-1]
 
     # sample test set so it takes every other entry - hourly results and return df
-    train = train.iloc[1:]
+    train = train.iloc[1:]  #############
     train = train.iloc[::2,:]
     test = test.iloc[::2,:]
     test.set_index('ds', inplace = True)
@@ -168,6 +168,7 @@ def price_save_model(date, forecast_days = 7):
 
     return
 
+
 def price_load_model(date, forecast_days = 7):
     '''
     A function to laod the model and run a one week prediction
@@ -180,7 +181,7 @@ def price_load_model(date, forecast_days = 7):
     horizon = 24*forecast_days
     future = model.make_future_dataframe(periods = horizon, freq='h')
     forecast = model.predict(future)
-    forecast_y_df = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+    forecast_y_df = forecast[['ds', 'yhat']]
 
     # Return prediction
     y_pred = forecast_y_df.iloc[-horizon :]

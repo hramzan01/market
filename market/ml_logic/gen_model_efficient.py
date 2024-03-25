@@ -284,7 +284,6 @@ def get_prediction():
         'weather_code',
         'kwh'
     ]]
-    print(final_prediction)
     return final_prediction
 
 

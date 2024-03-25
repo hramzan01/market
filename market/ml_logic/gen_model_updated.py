@@ -84,6 +84,7 @@ def append_weather_params():
 
     return df_merged
 
+
 def get_training_data():
     '''
     function preprocesses the feature engineered dataset to be passed into RNN model
@@ -304,8 +305,8 @@ def weekly_validation(d):
     diff_s = (last_date - first_date).total_seconds()
     hours = divmod(diff_s, 3600)[0]
 
-    print(first_date)
-    print(last_date)
+    print(first_date) # 2015-05-31
+    print(last_date) # 2018-12-12
     print(diff_s)
     print(hours)
     # TODO make full time dateaframe so that all dates in range will match
@@ -332,7 +333,7 @@ if __name__ == '__main__':
     #get_training_data()
     # train_model()
     #get_prediction()
-    #final_prediction = run_gen_model()
-    d = datetime(2015,5,31,16,0,0) # start date of evaluation
-    weekly_validation = weekly_validation(d)
-    print(weekly_validation)
+    final_prediction = run_gen_model()
+    #d = datetime(2015,5,31,16,0,0) # start date of evaluation
+    #weekly_validation = weekly_validation(d)
+    #print(weekly_validation)
