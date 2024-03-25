@@ -9,6 +9,8 @@ from sklearn.model_selection import train_test_split
 import warnings
 from datetime import datetime
 from datetime import timedelta
+import joblib
+
 warnings.simplefilter('ignore')
 
 n_input = 24
@@ -123,18 +125,24 @@ def get_training_data():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
-
     # Step 2: Scale features
     Xscaler = MinMaxScaler(feature_range=(0, 1))
     Xscaler.fit(X_train)
     scaled_X_train = Xscaler.transform(X_train)
     scaled_X_test = Xscaler.transform(X_test)
+    # Save X scaler
+    scaler_filename = "market/models/X_scaler.save"
+    joblib.dump(Xscaler, scaler_filename)
+
 
     # Scale the Y target
     Yscaler = MinMaxScaler(feature_range=(0, 1))
     Yscaler.fit(y_train.reshape(-1, 1))  # Reshape y_train for MinMaxScaler
     scaled_y_train = Yscaler.transform(y_train.reshape(-1, 1))
     scaled_y_test = Yscaler.transform(y_test.reshape(-1, 1))
+    # Save Y scaler
+    scaler_filename = "market/models/Y_scaler.save"
+    joblib.dump(Yscaler, scaler_filename)
 
     # Step 3: Reshape target (y) for Keras
     scaled_y_train = scaled_y_train.reshape(-1)
@@ -165,9 +173,9 @@ def get_training_data():
 
     return training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
 
+
 def train_model():
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
-
 
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
@@ -188,26 +196,39 @@ def train_model():
 
     # Save the model
     model.save("../models/rnn_model.keras")
-    # print('model saved')
-
+    print('model saved')
     return model
+
 
 def get_prediction():
     '''
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
     # Load the model params and model
-    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    #training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
 
+    def create_dataset(X, y, length, batch_size):
+        dataset = tf.data.Dataset.from_tensor_slices((X, y))
+        dataset = dataset.window(length, shift=1, drop_remainder=True)
+        dataset = dataset.flat_map(lambda x, y: tf.data.Dataset.zip((
+            x.batch(length),
+            y.skip(length - 1)
+        )))
+        return dataset.batch(batch_size).prefetch(1)
 
     def custom_activation(x):
         return tf.maximum(x, 0)
 
+    # And now to load...
+    scaler_filename = "market/models/X_scaler.save"
+    Xscaler = joblib.load(scaler_filename)
+
+    scaler_filename = "market/models/Y_scaler.save"
+    Yscaler = joblib.load(scaler_filename)
+
     # load the model
     file_path = f'{os.getcwd()}/market/models/rnn_model.keras'
     loaded_model = tf.keras.models.load_model(file_path, custom_objects={'custom_activation': custom_activation})
-    # removed AEOXLEY
-    #loaded_model = tf.keras.models.load_model("models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
 
     # Get 7 day forecast from API
     base_url = "https://api.open-meteo.com/v1/forecast"
@@ -232,7 +253,6 @@ def get_prediction():
     # save response as Dataframe
     responses = requests.get(base_url, params).json()
     future_forecast = pd.DataFrame()
-
     for param in params['hourly']:
         future_forecast[param] = responses['hourly'][param]
 
@@ -263,15 +283,18 @@ def get_prediction():
         'weather_code',
         'kwh'
     ]]
-    print(final_prediction)
     return final_prediction
+
 
 def weekly_validation(d):
     '''
     define 7 days period for validation based on custom date
     '''
+    d = d.replace(minute = 0, second = 0, microsecond = 0)
+
     # pass in variables for other functions
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
 
     # get predictions from model
     def custom_activation(x):
@@ -297,26 +320,25 @@ def weekly_validation(d):
 
     df_validation['date'] = training_sample.timestamp[:limiter]
     df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
-    print(len(df_validation))
-    print(df_validation.head(10))
 
     first_date = df_validation['date'].iloc[0]
     last_date = df_validation['date'].iloc[len(df_validation['date'])-1]
-    diff_s = (last_date - first_date).total_seconds()
-    hours = divmod(diff_s, 3600)[0]
+    print(last_date)
 
-    print(first_date) # 2015-05-31
-    print(last_date) # 2018-12-12
-    print(diff_s)
-    print(hours)
-    # TODO make full time dateaframe so that all dates in range will match
+    df = pd.date_range(start = first_date, end=last_date, freq = 'h').to_frame(name='date')
+    df.reset_index(inplace= True)
+    df.drop(columns=['index'], inplace=True)
+    df_results = pd.merge(df, df_validation, how = 'left', on = 'date')
 
-    index_ = df_validation[df_validation['date'] == d].index.item()
-    print(index_)
     # Select the next 7 rows from the matched index
-    weekly_validation = df_validation.iloc[index_:index_+168]
-
+    index_ = df_results[df_results['date'] == d].index.item()
+    weekly_validation = df_results.iloc[index_:index_+168]
+    weekly_validation['test'] = weekly_validation['test'].fillna(0)
+    weekly_validation['predict'] = weekly_validation['predict'].fillna(0)
+    total = weekly_validation['test'].sum()
+    print(total)
     return weekly_validation
+
 
 
 def run_gen_model():
@@ -331,9 +353,15 @@ if __name__ == '__main__':
     # load_raw_data()
     # append_weather_params()
     #get_training_data()
-    # train_model()
-    #get_prediction()
-    final_prediction = run_gen_model()
+    #train_model()
+    #final_prediction = get_prediction()
+    #print(final_prediction)
+    #final_prediction = run_gen_model()
+
+
+
+
     #d = datetime(2015,5,31,16,0,0) # start date of evaluation
-    #weekly_validation = weekly_validation(d)
-    #print(weekly_validation)
+    d = datetime(2017,5,31,16,0,0)
+    weekly_validation = weekly_validation(d)
+    print(weekly_validation)
