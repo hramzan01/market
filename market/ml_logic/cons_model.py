@@ -111,27 +111,28 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
 
     with open('market/models/consumption_model.json', 'w') as fout:
         fout.write(model_to_json(m))  # Save model
+    return
 
-    return date_index
 
-
-def cons_load_model(date_index, date):
+def cons_load_model(date, forecasted_days = 7):
     '''
     Load the model and run the forcast
     '''
-
+    # Load the model
     with open('market/models/consumption_model.json', 'r') as fin:
         m = model_from_json(fin.read())  # Load model
 
+    # reset the date to a matching date in the required time period
     d = datetime(2013, date.month, date.day, date.hour, 0, 0)
 
     # Forecast one week data
-    future = m.make_future_dataframe(periods=7*24, freq='h')
+    horizon = forecasted_days*24
+    future = m.make_future_dataframe(periods=horizon, freq='h')
     forecast = m.predict(future)
     print('Energy consumption forecasted')
 
     # Create return strings of forecasted and real energy consumption
-    prediction = forecast[['ds', 'yhat']].iloc[date_index:]
+    prediction = forecast[['ds', 'yhat']].iloc[-horizon :]
     # resccale to current time period
     time_diff = date - d
     prediction['ds'] += time_diff
@@ -141,8 +142,6 @@ def cons_load_model(date_index, date):
 
 if __name__ == '__main__':
     d = date=datetime(2018,5,6,18,0,0)
-    #date_index = cons_save_model('A', date=d)
-    #print(date_index)
-    date_index = 12559
-    prediction = cons_load_model(date_index = date_index, date=d)
+    cons_save_model('A', date=d)
+    prediction = cons_load_model(date=d, forecasted_days = 7)
     print(prediction)

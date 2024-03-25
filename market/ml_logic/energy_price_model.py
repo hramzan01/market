@@ -12,6 +12,8 @@ from prophet.plot import plot_cross_validation_metric
 from datetime import timedelta
 from datetime import datetime
 from dateutil.parser import parse
+from prophet.serialize import model_to_json, model_from_json
+
 
 
 """
@@ -97,7 +99,7 @@ def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_s
     """
     Returns trained prophet model and forecasting for energy prices
     """
-    # Ste up prophet model
+    # Set up prophet model
     model = Prophet(seasonality_mode=seasonality_mode, yearly_seasonality=year_seasonality_mode, interval_width=0.95)
     model.fit(train)
 
@@ -140,12 +142,60 @@ def energy_model_run(date, forecast_days = 7):
     return test, forecast_y_df[['yhat']]
 
 
+def price_save_model(date, forecast_days = 7):
+    '''
+    A function to preprocess the data and save the final model
+    '''
+    # Set ups for files
+    url = 'https://files.energy-stats.uk/csv_output/'
+    dir = os.path.join(os.getcwd(), 'raw_data')
+    csv_name = 'csv_agileoutgoing_C_London.csv'
+    file = os.path.join(url, csv_name)
+    save_path = os.path.join(dir, csv_name)
+
+    # download the latest file
+    download_file(file, save_path)
+
+    # preprocess the data
+    train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
+
+    # train the model
+    model = Prophet(seasonality_mode='multiplicative', yearly_seasonality=4, interval_width=0.95)
+    model.fit(train)
+
+    with open('market/models/price_model.json', 'w') as fout:
+        fout.write(model_to_json(model))  # Save model
+
+    return
+
+def price_load_model(date, forecast_days = 7):
+    '''
+    A function to laod the model and run a one week prediction
+    '''
+    # load model
+    with open('market/models/price_model.json', 'r') as fin:
+        model = model_from_json(fin.read())  # Load model
+
+    # Make forecast
+    horizon = 24*forecast_days
+    future = model.make_future_dataframe(periods = horizon, freq='h')
+    forecast = model.predict(future)
+    forecast_y_df = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+
+    # Return prediction
+    y_pred = forecast_y_df.iloc[-horizon :]
+    y_pred.set_index('ds', inplace = True)
+    print('Prediction Successful')
+    return y_pred
+
+
 if __name__ == '__main__':
     year = 2024
     month = 3
     day = 10
     date = datetime(year,month,day)
 
-    test, forecast_y_df = energy_model_run(date, forecast_days = 7)
-    print(test)
-    print(forecast_y_df)
+    #test, forecast_y_df = energy_model_run(date, forecast_days = 7)
+    price_save_model(date, forecast_days = 7)
+    y_pred = price_load_model(date, forecast_days = 7)
+    print(y_pred)
