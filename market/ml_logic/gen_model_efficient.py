@@ -125,7 +125,6 @@ def get_training_data():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
-
     # Step 2: Scale features
     Xscaler = MinMaxScaler(feature_range=(0, 1))
     Xscaler.fit(X_train)
@@ -291,8 +290,11 @@ def weekly_validation(d):
     '''
     define 7 days period for validation based on custom date
     '''
+    d = d.replace(minute = 0, second = 0, microsecond = 0)
+
     # pass in variables for other functions
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+
 
     # get predictions from model
     def custom_activation(x):
@@ -318,26 +320,25 @@ def weekly_validation(d):
 
     df_validation['date'] = training_sample.timestamp[:limiter]
     df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
-    print(len(df_validation))
-    print(df_validation.head(10))
 
     first_date = df_validation['date'].iloc[0]
     last_date = df_validation['date'].iloc[len(df_validation['date'])-1]
-    diff_s = (last_date - first_date).total_seconds()
-    hours = divmod(diff_s, 3600)[0]
+    print(last_date)
 
-    print(first_date) # 2015-05-31
-    print(last_date) # 2018-12-12
-    print(diff_s)
-    print(hours)
-    # TODO make full time dateaframe so that all dates in range will match
+    df = pd.date_range(start = first_date, end=last_date, freq = 'h').to_frame(name='date')
+    df.reset_index(inplace= True)
+    df.drop(columns=['index'], inplace=True)
+    df_results = pd.merge(df, df_validation, how = 'left', on = 'date')
 
-    index_ = df_validation[df_validation['date'] == d].index.item()
-    print(index_)
     # Select the next 7 rows from the matched index
-    weekly_validation = df_validation.iloc[index_:index_+168]
-
+    index_ = df_results[df_results['date'] == d].index.item()
+    weekly_validation = df_results.iloc[index_:index_+168]
+    weekly_validation['test'] = weekly_validation['test'].fillna(0)
+    weekly_validation['predict'] = weekly_validation['predict'].fillna(0)
+    total = weekly_validation['test'].sum()
+    print(total)
     return weekly_validation
+
 
 
 def run_gen_model():
@@ -353,13 +354,14 @@ if __name__ == '__main__':
     # append_weather_params()
     #get_training_data()
     #train_model()
-    final_prediction = get_prediction()
-    print(final_prediction)
+    #final_prediction = get_prediction()
+    #print(final_prediction)
     #final_prediction = run_gen_model()
 
 
 
 
     #d = datetime(2015,5,31,16,0,0) # start date of evaluation
-    #weekly_validation = weekly_validation(d)
-    #print(weekly_validation)
+    d = datetime(2017,5,31,16,0,0)
+    weekly_validation = weekly_validation(d)
+    print(weekly_validation)

@@ -25,7 +25,6 @@ logger.setLevel(logging.CRITICAL)
 Downloading, creating a model, and foreacsting London energy prices
 """
 
-
 def create_folder_if_not_exists(folder_path):
     """
     Creating folder for London wholesale energy prices
@@ -97,7 +96,7 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
         split_index = round(df_price.shape[0]*split_ratio) - 1
         train = df_price.iloc[:split_index]
         test = df_price.iloc[split_index:-1]
-        print(test)
+        #print(test)
         # sample test set so it takes every other entry - hourly results and return df
         train = train.iloc[1:]
         train = train.iloc[::2,:]
@@ -105,7 +104,6 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
         test.set_index('ds', inplace = True)
 
         print('Cost data processed')
-        print(test)
         return train, test
 
 
