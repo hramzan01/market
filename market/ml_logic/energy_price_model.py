@@ -1,3 +1,4 @@
+''' energy_price_model'''
 import os
 import pandas as pd
 import requests
@@ -12,12 +13,18 @@ from prophet.plot import plot_cross_validation_metric
 from datetime import timedelta
 from datetime import datetime
 from dateutil.parser import parse
+from prophet.serialize import model_to_json, model_from_json
 
+# Stop Prophet outputting lots of information
+import logging
+logger = logging.getLogger('cmdstanpy')
+logger.addHandler(logging.NullHandler())
+logger.propagate = False
+logger.setLevel(logging.CRITICAL)
 
 """
 Downloading, creating a model, and foreacsting London energy prices
 """
-
 
 def create_folder_if_not_exists(folder_path):
     """
@@ -68,36 +75,44 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
     end_date_dt = d + timedelta(days=forecast_days)
     start_date = str(start_date_dt)
     end_date = str(end_date_dt)
-    print(start_date_dt)
-    if start_date_dt - df_price['ds'][0] > timedelta(0): #and end_date_dt - df_price['ds'][len(df_price['ds'])-1] < timedelta(0):
-        print(f'Specified date {d} is in correct range')
+    if start_date_dt - df_price['ds'][0] > timedelta(0):
+        print(f'Specified date {d} is in the correct range')
     else:
         print(f'Specified date {d} is out of the range')
+        print('Please enter a different date')
         print(end_date)
         return
 
-    # Create train and test set
-    df_price = df_price[(df_price['ds']>start_date) & (df_price['ds']<= end_date)]
-    check_start_date=df_price['ds'][df_price.index[0]]
-    check_end_date=df_price['ds'][df_price.index[-1]]
-    split_index = round(df_price.shape[0]*split_ratio) - 1
-    train = df_price.iloc[:split_index]
-    test = df_price.iloc[split_index:-1]
+    # check if the full testing set exists
+    if df_price['ds'].iloc[-1] <= end_date_dt:
+        train = df_price[(df_price['ds']>start_date) & (df_price['ds']<= d)]
+        test = 'Date not applicable for test set'
+        return train, test
 
-    # sample test set so it takes every other entry - hourly results and return df
-    train = train.iloc[1:]
-    train = train.iloc[::2,:]
-    test = test.iloc[::2,:]
-    test.set_index('ds', inplace = True)
-    print('Train and Test data created')
-    return train, test
+    else:
+        # Create train and test set
+        df_price = df_price[(df_price['ds']>start_date) & (df_price['ds']<= end_date)]
+        check_start_date=df_price['ds'][df_price.index[0]]
+        check_end_date=df_price['ds'][df_price.index[-1]]
+        split_index = round(df_price.shape[0]*split_ratio) - 1
+        train = df_price.iloc[:split_index]
+        test = df_price.iloc[split_index:-1]
+        #print(test)
+        # sample test set so it takes every other entry - hourly results and return df
+        train = train.iloc[1:]
+        train = train.iloc[::2,:]
+        test = test.iloc[::2,:]
+        test.set_index('ds', inplace = True)
+
+        print('Cost data processed')
+        return train, test
 
 
 def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='h'):
     """
     Returns trained prophet model and forecasting for energy prices
     """
-    # Ste up prophet model
+    # Set up prophet model
     model = Prophet(seasonality_mode=seasonality_mode, yearly_seasonality=year_seasonality_mode, interval_width=0.95)
     model.fit(train)
 
@@ -140,12 +155,62 @@ def energy_model_run(date, forecast_days = 7):
     return test, forecast_y_df[['yhat']]
 
 
-if __name__ == '__main__':
-    year = 2024
-    month = 3
-    day = 10
-    date = datetime(year,month,day)
+def price_save_model(date, forecast_days = 7):
+    '''
+    A function to preprocess the data and save the final model
+    '''
+    # Set ups for files
+    url = 'https://files.energy-stats.uk/csv_output/'
+    dir = os.path.join(os.getcwd(), 'raw_data')
+    csv_name = 'csv_agileoutgoing_C_London.csv'
+    file = os.path.join(url, csv_name)
+    save_path = os.path.join(dir, csv_name)
 
-    test, forecast_y_df = energy_model_run(date, forecast_days = 7)
-    print(test)
-    print(forecast_y_df)
+    # download the latest file
+    download_file(file, save_path)
+
+    # preprocess the data
+    train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
+
+    # train the model
+    model = Prophet(seasonality_mode='multiplicative', yearly_seasonality=4, interval_width=0.95)
+    model.fit(train)
+
+    with open('market/models/price_model.json', 'w') as fout:
+        fout.write(model_to_json(model))  # Save model
+    print('Cost model saved')
+    return
+
+
+def price_load_model(date, forecast_days = 7):
+    '''
+    A function to laod the model and run a one week prediction
+    '''
+    # load model
+    with open('market/models/price_model.json', 'r') as fin:
+        model = model_from_json(fin.read())  # Load model
+
+    # Make forecast
+    horizon = 24*forecast_days
+    future = model.make_future_dataframe(periods = horizon, freq='h')
+    forecast = model.predict(future)
+    forecast_y_df = forecast[['ds', 'yhat']]
+
+    # Return prediction
+    y_pred = forecast_y_df.iloc[-horizon :]
+    y_pred.set_index('ds', inplace = True)
+    print('Cost forecasted')
+    return y_pred
+
+
+if __name__ == '__main__':
+    #year = 2024
+    #month = 3
+    #day = 10
+    #date = datetime(year,month,day)
+    date = datetime.now()
+    date = date.replace(minute = 0, second = 0, microsecond = 0)
+
+    #test, forecast_y_df = energy_model_run(date, forecast_days = 7)
+    price_save_model(date, forecast_days = 7)
+    y_pred = price_load_model(date, forecast_days = 7)
