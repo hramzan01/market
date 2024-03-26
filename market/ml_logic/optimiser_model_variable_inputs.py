@@ -5,7 +5,8 @@ Improved by using inputs of acorn group,
 Just runs a prediction
 
 Requirements in models:
-rnn_models.keras
+market/models/ldn_energy_supply.csv
+raw_data/ACORN_A_processed.csv
 '''
 
 # Imports
