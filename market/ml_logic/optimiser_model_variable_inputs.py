@@ -3,6 +3,9 @@ Optimsier model variable inputs
 Runing the final optimiser model
 Improved by using inputs of acorn group,
 Just runs a prediction
+
+Requirements in models:
+rnn_models.keras
 '''
 
 # Imports
@@ -82,6 +85,7 @@ def data_collect_save_models(d, acorn = 'A'):
     cons_save_model(X ='A', date=d)
     price_save_model(date = d, forecast_days = 7)
     # TODO add energy generation model saving here
+    train_model()
 
 
 def data_collect_prediction(d_input, acorn = 'A'):
@@ -388,9 +392,9 @@ if __name__ == '__main__':
 
     #d = datetime(2024,3,15,18,30,5) # start date of evaluation
 
-    #price_week, baseline_cost = run_full_model_unsaved()
     start = time.time()
-    price_week, baseline_cost = run_full_model_saved()
+    price_week, baseline_cost = run_full_model_unsaved()
+    #price_week, baseline_cost = run_full_model_saved()
     end = time.time()
 
     print(f'The model took {end - start} seconds to run')

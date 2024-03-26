@@ -1,4 +1,8 @@
-''' gen_model_efficient'''
+'''
+gen_model_efficient
+Creates and runs a RNN model to predict PV energy generation
+'''
+
 # Import libraries
 import pandas as pd
 import os
@@ -176,6 +180,9 @@ def get_training_data():
 
 
 def train_model():
+    '''
+    Train a model based on the training data set
+    '''
     training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
 
     # RNN Architecture
@@ -196,7 +203,7 @@ def train_model():
     print('--model trained sucessfuly--')
 
     # Save the model
-    model.save("../models/rnn_model.keras")
+    model.save("market/models/rnn_model.keras")
     print('model saved')
     return model
 
@@ -204,6 +211,7 @@ def train_model():
 def get_prediction():
     '''
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
+    Uses a pretrained model and pretrained scalers
     '''
     # Load the model params and model
     #training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
@@ -290,6 +298,7 @@ def get_prediction():
 def weekly_validation(d):
     '''
     define 7 days period for validation based on custom date
+    outputs the test and predicted data for PV energy generation
     '''
     d = d.replace(minute = 0, second = 0, microsecond = 0)
 
@@ -354,7 +363,8 @@ if __name__ == '__main__':
     # load_raw_data()
     # append_weather_params()
     #get_training_data()
-    #train_model()
+    train_model()
+    print('Model trained')
     #final_prediction = get_prediction()
     #print(final_prediction)
     #final_prediction = run_gen_model()
@@ -363,6 +373,6 @@ if __name__ == '__main__':
 
 
     #d = datetime(2015,5,31,16,0,0) # start date of evaluation
-    d = datetime(2017,5,31,16,0,0)
-    weekly_validation = weekly_validation(d)
-    print(weekly_validation)
+    #d = datetime(2017,5,31,16,0,0)
+    #weekly_validation = weekly_validation(d)
+    #print(weekly_validation)

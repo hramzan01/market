@@ -1,9 +1,13 @@
-''' energy_price_model'''
+'''
+Energy_price_model
+Predicts the energy price from a given date in the UK
+'''
+
+# imports
 import os
 import pandas as pd
 import requests
 import time
-
 import numpy as np
 
 from prophet import Prophet
@@ -135,7 +139,7 @@ def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_s
 
 def energy_model_run(date, forecast_days = 7):
     '''
-    A function to run the model and return test and forecasted data
+    A function to run the full model and return test and forecasted data
     '''
     # Set ups for files
     url = 'https://files.energy-stats.uk/csv_output/'
@@ -157,7 +161,7 @@ def energy_model_run(date, forecast_days = 7):
 
 def price_save_model(date, forecast_days = 7):
     '''
-    A function to preprocess the data and save the final model
+    A function to preprocess the data and save the final model for future use
     '''
     # Set ups for files
     url = 'https://files.energy-stats.uk/csv_output/'
@@ -184,7 +188,7 @@ def price_save_model(date, forecast_days = 7):
 
 def price_load_model(date, forecast_days = 7):
     '''
-    A function to laod the model and run a one week prediction
+    A function to laod a saved model and run a one week prediction
     '''
     # load model
     with open('market/models/price_model.json', 'r') as fin:
