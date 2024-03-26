@@ -1,4 +1,7 @@
-''' energy_price_model'''
+'''
+Energy_price_model
+Predicts the energy price from a given date in the UK
+'''
 
 # imports
 import os

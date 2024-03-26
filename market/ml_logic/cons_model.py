@@ -1,5 +1,9 @@
-'''Cons model'''
+'''
+Cons model:
+Predicts the energy conxumption of a house from a given acorn set
+'''
 
+# Imports
 import pandas as pd
 import numpy as np
 from datetime import datetime
