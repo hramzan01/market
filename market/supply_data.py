@@ -7,7 +7,10 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 import warnings
+from datetime import datetime
 warnings.simplefilter('ignore')
+test_date = datetime(2015, 5, 31, 16, 0, 0)
+
 
 n_input = 24
 batch_size = 64
@@ -114,7 +117,7 @@ def get_training_data():
 
     y = training_sample['generation_wh'].values
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, shuffle=False)
 
 
     # Step 2: Scale features
@@ -141,7 +144,6 @@ def get_training_data():
     n_input = 24  # Number of samples/rows/timesteps to look in the past to forecast the next sample
     batch_size = 64  # Number of timeseries samples in each batch
     
-
     def create_dataset(X, y, length, batch_size):
         dataset = tf.data.Dataset.from_tensor_slices((X, y))
         dataset = dataset.window(length, shift=1, drop_remainder=True)
@@ -155,10 +157,11 @@ def get_training_data():
     test_dataset = create_dataset(scaled_X_test, scaled_y_test, length=n_input, batch_size=batch_size)
 
     print('--training data loaded--')
-    return scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
+    
+    return training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler
 
 def train_model():
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
     # RNN Architecture
     # Custom activation function to ensure non-negative predictions
     def custom_activation(x):
@@ -173,7 +176,7 @@ def train_model():
     model.compile(loss='mse', optimizer='adam')
 
     # Fit
-    model.fit(train_dataset, epochs=5, verbose=0)
+    model.fit(train_dataset, epochs=8, verbose=0)
     print('--model trained sucessfuly--')
     
     # Save the model
@@ -187,7 +190,7 @@ def get_prediction():
     this function calls a 7 week forecast from API then preprocesses before passing through model for prediction
     '''
     # Load the model params and model
-    scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
 
     def custom_activation(x):
         return tf.maximum(x, 0)
@@ -251,6 +254,45 @@ def get_prediction():
     print(final_prediction)
     return final_prediction
 
+def weekly_validation(d):
+    '''
+    define 7 days period for validation based on custom date
+    '''
+    # pass in variables for other functions
+    training_sample, scaled_y_test, scaled_X_train, create_dataset, train_dataset, test_dataset, Xscaler, Yscaler = get_training_data()
+    
+    # get predictions from model
+    def custom_activation(x):
+        return tf.maximum(x, 0)
+    
+    model = tf.keras.models.load_model("models/rnn_model.keras", custom_objects={'custom_activation': custom_activation})
+    predictions = model.predict(test_dataset)
+
+    # define y actual and y pred
+    # Step 7: Inverse transform predictions and true values
+    scaled_y_test_inverse = Yscaler.inverse_transform(scaled_y_test.reshape(-1, 1)).flatten()
+    predictions_inverse = Yscaler.inverse_transform(predictions).flatten()
+    
+    # Use limiter so that length of pred and actual match
+    limiter = len(predictions_inverse)
+
+    df_validation = pd.DataFrame(
+        {'test': scaled_y_test_inverse[:limiter].round(0),
+        'predict': predictions_inverse.round(0)}
+    )
+
+    df_validation['date'] = training_sample.timestamp[:limiter]
+    df_validation['date'] = pd.to_datetime(df_validation['date']).dt.tz_localize(None)
+    
+    # Allow for variable d to define date
+    index = df_validation[df_validation['date'] == d].index.item()
+
+    # Select the next 7 rows from the matched index
+    weekly_validation = df_validation.iloc[index:index+7]
+    print(weekly_validation.head())
+    return weekly_validation
+       
+    
 if __name__ == '__main__':
     ''''
     Uncomment required steps
@@ -259,4 +301,5 @@ if __name__ == '__main__':
     # append_weather_params()
     # get_training_data()
     # train_model()
-    get_prediction()
+    # get_prediction()
+    weekly_validation(test_date)

@@ -13,6 +13,9 @@ from datetime import timedelta
 from datetime import datetime
 from dateutil.parser import parse
 
+from prophet.serialize import model_to_json, model_from_json
+
+
 """
 Downloading London wholesale electricity prices files from energy-stats
 """
@@ -81,19 +84,33 @@ def ml_model(train, forecast_days=7, seasonality_mode = 'multiplicative', year_s
     print(f'performing cross-validation using, initial: {initial}, horizon:{horizon}, and period:{period}')
     df_cv = cross_validation(model = model, initial=f'{initial} days', horizon=f'{horizon} days', period=f'{period} days')
     df_p = performance_metrics(df_cv)
+
+    # # Saving prophet model
+    # save_location = os.path.join(dir, 'serialized_model.json')
+    # with open(save_location, 'w') as fout:
+    #     fout.write(model_to_json(model))  # Save model
+    # print('prophet model was written and saved')
+
     return model, forecast_y_df, df_cv, df_p
 
-def pred(df_price, model, forecast_start_date='2024-03-18', forceast_end_date='2024-03-25', freq='H'):
+def pred(model, forecast_start_date='2024-03-18', forecast_days=7, freq='H'):
     # forecast_days = forceast_end_date-forecast_start_date
-    date1 = datetime.strptime(forceast_end_date, "%Y-%m-%d").date()
+    # date1 = datetime.strptime(forecast_end_date, "%Y-%m-%d").date()
     date2 = datetime.strptime(forecast_start_date, "%Y-%m-%d").date()
-    forecast_days = int((date1 - date2).days)
+
+    date1 = date2 + timedelta(days=7)
+
+    # forecast_days = int((date1 - date2).days)
+
     horizon = 24*forecast_days
     future = model.make_future_dataframe(periods = horizon, freq= freq)
     forecast = model.predict(future)
-    pred_y_df = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
+    pred_y_df_sell = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']]
     print(forecast_days)
-    return pred_y_df,date1, date2, forecast_days
+    hourly_data_sell = pred_y_df_sell.resample('H', on='ds').mean()
+    hourly_data_buy= hourly_data_sell*2
+
+    return pred_y_df_sell, hourly_data_sell, hourly_data_buy, date1, date2, forecast_days
 
 
 

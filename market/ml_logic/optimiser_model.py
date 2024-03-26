@@ -9,6 +9,7 @@ import os
 
 from cons_model import cons_model
 from energy_price_model import *
+from gen_model_updated import *
 
 '''
 Runing all other ML Models
@@ -37,13 +38,22 @@ def data_collect(d):
     cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
 
     # Run the Generation model
-    # TODO: link the generation model here
-    gen = pd.read_csv(f'{os.getcwd()}/raw_data/final_prediction.csv')
+    gen = run_gen_model()
     gen['ds']=price_actual.reset_index()['ds']
-    gen.drop(columns = ['Unnamed: 0', 'weather_code'], inplace = True)
     gen.set_index('ds', inplace = True)
+    gen.drop(columns = ['weather_code'], inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
     gen = gen / 150
+
+
+    # TODO: link the generation model here
+    # Removed AEOXLEY
+    #gen = pd.read_csv(f'{os.getcwd()}/raw_data/final_prediction.csv')
+    #gen['ds']=price_actual.reset_index()['ds']
+    #gen.drop(columns = ['Unnamed: 0', 'weather_code'], inplace = True)
+    #gen.set_index('ds', inplace = True)
+    #gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
+    #gen = gen / 150
 
 
     # Combine the data into an actual dataframe
@@ -144,7 +154,7 @@ def optimiser_model(data):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':500000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':100000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -213,14 +223,24 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
+def run_full_model(d):
+    actual_df, predicted_df = data_collect(d)
+    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
+    print('Battery Storage for the week:')
+    print(battery_store)
+    print(f'The week cost using our model is £{round(price_week/100,2)}')
+    baseline, baseline_price = baseline_model(actual_df)
+    print(f'The week cost not using our model is £{round(baseline/100,2)}')
+
 
 if __name__ == '__main__':
-    actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
-    print(actual_df.head(20))
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
-    print(price_week)
-    baseline, baseline_price = baseline_model(actual_df)
-    print(baseline)
-    print(price_energy_bought)
-    print(price_energy_sold)
-    print(baseline_price)
+    d = datetime(2024,1,3,18,30,5)
+    run_full_model(d)
+    # To run the model manually:
+    #actual_df, predicted_df = data_collect(datetime(2024,1,3,18,30,5))
+    #price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df)
+    #print('Battery Storage for the week:')
+    #print(battery_store)
+    #print(f'The week cost using our model is £{round(price_week/100,2)}')
+    #baseline, baseline_price = baseline_model(actual_df)
+    #print(f'The week cost not using our model is £{round(baseline/100,2)}')

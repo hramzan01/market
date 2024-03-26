@@ -28,4 +28,7 @@ mlruns
 *.vscode
 
 # Environment Variables
-.env 
+.env
+
+
+*Zone.Identifier
