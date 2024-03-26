@@ -19,8 +19,8 @@ logger.setLevel(logging.CRITICAL)
 
 def cons_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     '''
-    A model which takes in X, ACORN value for the house and d, the dat which is being investigated.
-    Returns the predicted and actual energy data in lists
+    A model which takes in X- the ACORN value for the house and d, the date which is being investigated.
+    Returns the predicted and actual energy data in lists for use in evaluation
     '''
     # TODO: add an extra input as number of days
     # Data import
@@ -79,7 +79,8 @@ def cons_model(X ='A', date=datetime(2024,3,19,18,00,0)):
 
 def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     '''
-    Use the consumption data to run the model and save the model
+    Use the consumption data to run and save the model
+    Use for current predictions
     '''
     # Data import
     X = X.upper()
@@ -125,6 +126,7 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
 def cons_load_model(date, forecasted_days = 7):
     '''
     Load the model and run the forcast
+    Use for current predictions
     '''
     # Load the model
     with open('market/models/consumption_model.json', 'r') as fin:
