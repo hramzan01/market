@@ -57,10 +57,10 @@ def data_collect(d, acorn = 'A'):
     gen['date'] = gen['date'].apply(lambda x: x.replace(year = d.year))
     gen.set_index('date', inplace = True)
 
-    gen_actual = gen[['test']]/360
+    gen_actual = gen[['test']]/500
     gen_actual.rename(columns={'test':'Generation_kwh'}, inplace = True)
 
-    gen_pred = gen[['predict']]/360
+    gen_pred = gen[['predict']]/500
     gen_pred.rename(columns={'predict':'Generation_kwh'}, inplace = True)
 
     # Combine the data into an actual dataframe

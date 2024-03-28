@@ -57,7 +57,7 @@ def data_collect(d, acorn = 'A'):
     gen.set_index('ds', inplace = True)
     gen.drop(columns = ['weather_code'], inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    gen = gen / 150
+    gen = gen / 500
 
     # Combine the data into an actual dataframe
     price_buy = (price_actual[['SalePrice_p/kwh']] * 2)
@@ -113,7 +113,7 @@ def data_collect_prediction(d_input, acorn = 'A'):
     gen.set_index('ds', inplace = True)
     gen.drop(columns = ['weather_code'], inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    gen = gen / 150
+    gen = gen / 500
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_p/kwh']] * 2)

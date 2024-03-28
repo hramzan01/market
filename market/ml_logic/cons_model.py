@@ -88,7 +88,6 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     '''
     # Data import
     X = X.upper()
-    path = '/home/adam/code/hramzan01/market/raw_data/ACORN_A_processed.csv'
     cwd = os.getcwd()
     path = cwd + f'/raw_data/ACORN_{X}_processed.csv'
     data = pd.read_csv(path)
