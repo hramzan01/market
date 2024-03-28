@@ -152,7 +152,9 @@ def energy_model_run(date, forecast_days = 7):
     download_file(file, save_path)
 
     # Run the model
-    train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
+    train, test = create_train_test_set(file, d=date, previous_days=36*30, forecast_days = forecast_days)
+    # Line removed for model checking AEOXLEY
+    #train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
     model, forecast_y_df = ml_model(train, forecast_days=forecast_days, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='h')
     print('Model finished')
     #return test, forecast_y_df[['ds', 'yhat']]

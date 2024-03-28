@@ -57,10 +57,10 @@ def data_collect(d, acorn = 'A'):
     gen['date'] = gen['date'].apply(lambda x: x.replace(year = d.year))
     gen.set_index('date', inplace = True)
 
-    gen_actual = gen[['test']]/360
+    gen_actual = gen[['test']]/500
     gen_actual.rename(columns={'test':'Generation_kwh'}, inplace = True)
 
-    gen_pred = gen[['predict']]/360
+    gen_pred = gen[['predict']]/500
     gen_pred.rename(columns={'predict':'Generation_kwh'}, inplace = True)
 
     # Combine the data into an actual dataframe
@@ -260,16 +260,35 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
     return df
 
 
-def run_full_model(d, battery_size, battery_charge, acorn = 'A'):
+def predict_model_accuracy(d, battery_size, battery_charge, acorn = 'A'):
     '''
-    This function runs the full model and for optimising profit
+    This function runs the full model for optimising profit
     The model outputs the cost for one week based on the optimised scenario
-    And outputs the cost for one week for the baseline scenario
+    And iterates through running the actual and predicted data
     '''
+    d = datetime(2024,1,1,12,00,5)
+
     actual_df, predicted_df = data_collect(d)
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
-    baseline_cost, baseline_price = baseline_model(predicted_df)
-    return price_week, baseline_cost
+    #print(actual_df)
+    # SalePrice_p/kwh    PurchasePrice_p/kwh    Generation_kwh    Consumption_kwh
+
+    ##Use actual data
+    actual_price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
+    print('Test 1/5 Done...')
+    ## Use predicted data
+    pred_price_week, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
+    print('Test 2/5 Done...')
+    ## use actual price data
+    price_df = pd.concat([actual_df['SalePrice_p/kwh'], actual_df['PurchasePrice_p/kwh'], predicted_df['Generation_kwh'], predicted_df['Consumption_kwh']], axis = 1)
+    price_actual_price_week, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(price_df,battery_charge=battery_charge, battery_size = battery_size)
+    print('Test 3/5 Done...')
+    gen_df = pd.concat([predicted_df['SalePrice_p/kwh'], predicted_df['PurchasePrice_p/kwh'], actual_df['Generation_kwh'], predicted_df['Consumption_kwh']], axis = 1)
+    gen_actual_price_week, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(gen_df,battery_charge=battery_charge, battery_size = battery_size)
+    print('Test 4/5 Done...')
+    cons_df = pd.concat([predicted_df['SalePrice_p/kwh'], predicted_df['PurchasePrice_p/kwh'], predicted_df['Generation_kwh'], actual_df['Consumption_kwh']], axis = 1)
+    cons_actual_price_week, battery_store_pred, price_energy_bought_pred, price_energy_sold_pred = optimiser_model(cons_df,battery_charge=battery_charge, battery_size = battery_size)
+    print('Test 5/5 Done...')
+    return actual_price_week, pred_price_week, price_actual_price_week, gen_actual_price_week, cons_actual_price_week
 
 
 
@@ -277,44 +296,13 @@ if __name__ == '__main__':
     battery_size = 10 # total size
     battery_charge = 1 # initial charge amount
     time_points = 7*24 # hours
-    d = datetime(2024,1,1,12,00,0) # start date fo evaluation
-
-    # To run data collection
-    #actual_df, predicted_df = data_collect(d, acorn = 'A')
-    #print(actual_df)
-    #print(predicted_df)
-
-    # To run full model
-    #price_week_total, baseline_cost = run_full_model(d, battery_size, battery_charge, acorn='A')
-    #print(f'The week cost using our model is £{round(price_week_total/100,2)}')
-    #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-
-    # To evaluate model
-    #price_week, price_week_pred, abs_error, pdiff = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
-
-    df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
-    print(df)
-    #df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
-
-    #print(f'Absolute error is £{abs_error}')
-    #print(f'Percentage accuracy is {pdiff}%')
-    #print(f'Actual price is £{price_week}')
-
-    #print(f'The week cost using our model is £{round(price_week_total/100,2)}')
-    #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-
-
-    #d = datetime(2024,1,1,12,00,5)
-
-
-    #df = pd.DataFrame([], columns = ['actual_price_week','pred_price_week','actual_baseline_cost','pred_baseline_cost'],index =[])
-    #df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[]}, index = [])
+    d = datetime(2024,1,1,12,00,0) # start date for evaluation
+    #df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
     #print(df)
-    #actual_price_week = 1
-    #pred_price_week = 2
-    #actual_baseline_cost = 3
-    #pred_baseline_cost = 4
-    #d = 'Hello'
-    #df_to_add = pd.DataFrame([[actual_price_week,pred_price_week,actual_baseline_cost,pred_baseline_cost]], columns = ['actual_price_week','pred_price_week','actual_baseline_cost','pred_baseline_cost'],index =[d])
-    #df = pd.concat([df, df_to_add])
-    #print(df)
+
+    actual_price_week, pred_price_week, price_actual_price_week, gen_actual_price_week, cons_actual_price_week = predict_model_accuracy(d, battery_size, battery_charge, acorn = 'A')
+    print(actual_price_week)
+    print(pred_price_week)
+    print(price_actual_price_week)
+    print(gen_actual_price_week)
+    print(cons_actual_price_week)

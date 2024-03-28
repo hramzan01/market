@@ -27,7 +27,7 @@ def load_raw_data():
     '''
     # Load in Data
     df_spec = pd.read_csv('data/raw_data/metadata.csv')
-    df_energy_ldn = pd.read_csv('data/raw_data/hourly_generation_ldn.csv')
+    df_energy_ldn = pd.read_csv('/home/adam/code/hramzan01/market/raw_data/hourly_generation_ldn.csv')
 
     # rename of change type
     df_energy_ldn.rename(columns={'datetime': 'timestamp'}, inplace=True)
@@ -97,7 +97,8 @@ def get_training_data():
     function preprocesses the feature engineered dataset to be passed into RNN model
     '''
     # define training data of all properties
-    file_path = f'{os.getcwd()}/market/models/ldn_energy_supply.csv'
+    file_path = f'{os.getcwd()}/raw_data/ldn_energy_supply.csv'
+    #file_path = f'{os.getcwd()}/market/models/ldn_energy_supply.csv'
     training_data = pd.read_csv(file_path)
 
     # Line removed
@@ -360,11 +361,12 @@ if __name__ == '__main__':
     ''''
     Uncomment required steps
     '''
+
     # load_raw_data()
     # append_weather_params()
-    #get_training_data()
-    train_model()
-    print('Model trained')
+    get_training_data()
+    #train_model()
+    #print('Model trained')
     #final_prediction = get_prediction()
     #print(final_prediction)
     #final_prediction = run_gen_model()
