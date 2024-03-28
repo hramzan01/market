@@ -7,5 +7,5 @@ install:
 run_api:
 	uvicorn market.api.fast_price:app --reload
 
-run_stlt:
-	streamlit run app/app.py
+run_stlt: 
+	streamlit run app/app_ri.py
