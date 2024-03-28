@@ -4,8 +4,8 @@ Runing the final optimiser model
 Improved by using inputs of acorn group,
 Just runs a prediction
 
-Requirements in models:
-market/models/ldn_energy_supply.csv
+Requirements in saving models:
+raw_data/ldn_energy_supply.csv
 raw_data/ACORN_A_processed.csv
 '''
 
@@ -86,7 +86,6 @@ def data_collect_save_models(d, acorn = 'A'):
     d=d.replace(minute = 0, second = 0)
     cons_save_model(X ='A', date=d)
     price_save_model(date = d, forecast_days = 7)
-    # TODO add energy generation model saving here
     train_model()
 
 
@@ -396,27 +395,10 @@ if __name__ == '__main__':
 
     start = time.time()
     #price_week, baseline_cost = run_full_model_unsaved()
-    #price_week, baseline_cost = run_full_model_saved()
-    api = run_full_model_api(battery_size, battery_charge, acorn = 'A')
-    print(api['weather_code'])
+    price_week, baseline_cost = run_full_model_saved()
     end = time.time()
 
+    # print statements
     print(f'The model took {end - start} seconds to run')
-
-
-    # To run full model
-    #price_week, baseline_cost = run_full_model_sa(d, battery_size, battery_charge, acorn='A')
     print(f'The week cost using our model is £{round(price_week/100,2)}')
     print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-
-    # To evaluate model
-    #abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
-    #print(f'Absolute error is £{abs_error}')
-
-    # To run just the model for data prediction
-    #data_collect_save_model(d, acorn = 'A')
-    #predicted_df = data_collect_prediction(d, acorn = 'A')
-    #price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df, battery_charge, battery_size)
-    #baseline_cost, baseline_price = baseline_model(predicted_df)
-    #print(f'The week cost using our model is £{round(price_week/100,2)}')
-    #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
