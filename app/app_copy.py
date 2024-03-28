@@ -1,22 +1,12 @@
-
-
 import streamlit as st
 from streamlit.components.v1 import html
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
-
-
-import matplotlib.pylab as plt
-
-# import datetime
-import requests
-
 from PIL import Image
 from streamlit_option_menu import option_menu
 import os
-
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
@@ -36,35 +26,57 @@ st.markdown(
         background-color: #FF7C52;
     }
     </style>
-    """
-    """
-    <style>
-    [data-testid="column"]{
-        background-color: #EEF0F4;
-        border-radius: 5px;
-    }
-    </style>
-    """
-    """
-    <style>
-    [data-testid="stSlider"] {
-        background-color: #EEF0F4;
-        border-radius: 5px;
-        padding: 10px;
-    }
-    </style>
-    """
-    """
-    <style>
-        .stPlotlyChart {
-            border-radius: 10px;
-            overflow: hidden; /* This is important to ensure the border radius is applied properly */
-        }
-    </style>
     """,
     unsafe_allow_html=True
 )
-
+html_code = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll Battery</title>
+    <style>
+        #progress {
+            position: fixed;
+            top: 50%;
+            right: 10px; /* Adjust as needed */
+            transform: translateY(-50%);
+            background-color: #ddd;
+            height: 40px;
+            width: 20px;
+        }
+    </style>
+    <style>
+        #battery {
+            position: fixed;
+            top: 50%;
+            right: 11px; /* Adjust as needed */
+            transform: translateY(-50%);
+            background-color: #5BC236;
+            height: 35px;
+            width: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="progress"></div>
+    <div id="battery"></div>
+</body>
+</html>
+<script>
+    window.addEventListener('scroll', function() {
+        var battery = document.getElementById("battery");
+        var scrollHeight = document.documentElement.scrollHeight;
+        var clientHeight = document.documentElement.clientHeight;
+        var scrollTop = document.documentElement.scrollTop;
+        var percentageScrolled = (scrollTop / (scrollHeight - clientHeight)) * 100;
+        var newHeight = percentageScrolled + "%";
+        battery.style.height = newHeight;
+    });
+</script>
+"""
+st.markdown(html_code, unsafe_allow_html=True)
 
 # HOME: MARKET logo
 st.markdown('')  # Empty markdown line for spacing
@@ -113,90 +125,36 @@ st.write("""
 # INPUT: user variable (or create your custom profile)
 st.header('Form', divider='grey')
 
+Postcode = st.text_input("Postcode", "")
+House_price = st.number_input("House price", step=10000)
+Income = st.number_input("Income", step=10000)
+Battery_Size = st.number_input("Battery Size", step=1)
+Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
+House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
+selected_date = st.date_input('Select a date', datetime.today())
 
-with st.form(key='params_for_api'):
-    Postcode = st.text_input("Postcode", "")
-    House_price = st.number_input("House price", step=10000)
-    Income = st.number_input("Income", step=10000)
-    Battery_Size = st.number_input("Battery Size", step=1)
-    Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
-    House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
-    selected_date = st.date_input('Select a date', datetime.today())
-
-    selected_option = st.selectbox("Select an option", House_type)
-
-    ########Test_API_predict
-    params = {
-        #'date': f'{selected_date} 00:00:00',
-        'battery_size': Battery_Size,
-        'battery_charge': Battery_Charge
-    }
-
-    api_url = 'http://127.0.0.1:8000/predict'
-    # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
-
-    complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
-
-    st.write(f'params passed to API are {Battery_Size}, and {Battery_Charge}') #{selected_date}
-
-    st.write(f'complete url is {complete_url}')
-
-    # if st.form_submit_button('Submit'):
-    #     response = requests.get(api_url, params=params)
-    #     prediction = response.json()
-    #     st.write(prediction)
-
-    if st.form_submit_button('Submit'):
-        response = requests.get(api_url, params=params)
-        prediction = response.json()
-        data = prediction
-        saleprice = data['SalePrice_p/kwh']
-        buyprice = data['PurchasePrice_p/kwh']
-        power_gen = data['Generation_kwh']
-        power_cons = data['Consumption_kwh']
-        x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
-        x_buy, y_buy = zip(*buyprice.items())
-        x_gen, y_gen = zip(*power_gen.items())
-        x_cons, y_cons = zip(*power_cons.items())
-
-        fig = plt.figure();
-        plt.plot(x_sale, y_sale,label = 'sell_price');
-        plt.plot(x_buy, y_buy, label = 'buy price');
-        plt.legend()
-        # plt.show()
-        # st.write(prediction)
-        fig_power = plt.figure();
-        plt.plot(x_gen, y_gen,label = 'Power_gen');
-        plt.plot(x_cons, y_cons, label = 'Power_cons');
-        plt.legend()
-        st.pyplot(fig)
-        st.pyplot(fig_power)
-
+selected_option = st.selectbox("Select an option", House_type)
 
 st.button("Submit")
 
 # Output: User visuals (this is user dashboard)
 st.header('Your Output', divider='grey')
 
-
 day = st.slider("Select Days", 1,7,1)
-
 root = os.getcwd()
-data = pd.read_csv(os.path.join(root, 'app/data/final_prediction.csv'))
+data = pd.read_csv(os.path.join(root, 'data/processed_data/final_prediction.csv'))
 
 # Create a Plotly figure
 fig = go.Figure()
 
 # Add a line trace to the figure
-
 fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines',fill='tozeroy', name='Line Chart'))
-
 
 # Set title and axes labels
 fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
 fig.update_layout(
-    plot_bgcolor='#EEF0F4',  # Transparent background
-    paper_bgcolor='#EEF0F4'   # Transparent background
+    plot_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
+    paper_bgcolor='rgba(0, 0, 0, 0)'   # Transparent background
 )
 # fig.update_traces(line=dict(color='red', width=2))  # Change 'red' to your desired color and 2 to your desired thickness
 
