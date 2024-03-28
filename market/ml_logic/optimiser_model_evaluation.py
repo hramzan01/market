@@ -242,7 +242,7 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
     d = datetime(2024,1,1,12,00,5)
     df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[]}, index = [])
 
-    for i in range(10):
+    for i in range(3):
         actual_df, predicted_df = data_collect(d)
         # Use actual data
         actual_price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
@@ -256,7 +256,7 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
         df = pd.concat([df, df_to_add])
         td = timedelta(days=7)
         d = d + td
-
+        df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
     return df
 
 
@@ -294,7 +294,7 @@ if __name__ == '__main__':
 
     df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
     print(df)
-    df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
+    #df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
 
     #print(f'Absolute error is £{abs_error}')
     #print(f'Percentage accuracy is {pdiff}%')
