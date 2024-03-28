@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
-from dateutil import parser
+
 import matplotlib.pylab as plt
 
 # import datetime
@@ -153,75 +153,35 @@ with st.form(key='params_for_api'):
 
     if st.form_submit_button('Submit'):
         response = requests.get(api_url, params=params)
-        data = response.json()
+        prediction = response.json()
+        data = prediction
+        saleprice = pd.DataFrame(data['prediction_data']['SalePrice_p/kwh'])
+        buyprice = pd.DataFrame(data['prediction_data']['PurchasePrice_p/kwh'])
+        power_gen = pd.DataFrame(data['prediction_data']['Generation_kwh'])
+        power_cons = pd.DataFrame(data['prediction_data']['Consumption_kwh'])
 
-        saleprice = data['prediction_data']['SalePrice_p/kwh']
-        buyprice = data['prediction_data']['PurchasePrice_p/kwh']
-        power_gen = data['prediction_data']['Generation_kwh']
-        power_cons = data['prediction_data']['Consumption_kwh']
+        st.write(saleprice.df)
+        st.write(buyprice.df)
+        st.write(power_gen.df)
+        st.write(power_cons.df)
 
-        res_opt_batt = data['res_opt_batt']['0']
-        res_opt_buyprice = data['res_opt_buyprice']['0']
-        res_opt_sellprice = data['res_opt_sellprice']['0']
-        res_opt_baseprice = data['res_opt_baseprice']['0']
+        # x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
+        # x_buy, y_buy = zip(*buyprice.items())
+        # x_gen, y_gen = zip(*power_gen.items())
+        # x_cons, y_cons = zip(*power_cons.items())
 
-        # saleprice = pd.DataFrame(data['prediction_data']['SalePrice_p/kwh'])
-        # buyprice = pd.DataFrame(data['prediction_data']['PurchasePrice_p/kwh'])
-        # power_gen = pd.DataFrame(data['prediction_data']['Generation_kwh'])
-        # power_cons = pd.DataFrame(data['prediction_data']['Consumption_kwh'])
-
-        # st.write(res_opt_batt.head())
-        # st.write(buyprice.df)
-        # st.write(power_gen.df)
-        # st.write(power_cons.df)
-
-        x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
-        x_buy, y_buy = zip(*buyprice.items())
-        x_gen, y_gen = zip(*power_gen.items())
-        x_cons, y_cons = zip(*power_cons.items())
-
-        x_battopt, y_battopt = zip(*res_opt_batt.items())
-        x_bpopt, y_bpopt = zip(*res_opt_buyprice.items())
-        x_spopt, y_spopt = zip(*res_opt_sellprice.items())
-        x_basep, y_basep = zip(*res_opt_baseprice.items())
-
-        dates = pd.to_datetime(x_buy)
-
-        fig = plt.figure();
-        plt.plot(dates, y_sale,label = 'sell_price');
-        plt.plot(dates, y_buy, label = 'buy price');
-        plt.legend()
-        start_date = (x_buy[0]) #.floor('D')
-        start_datetimeobj = parser.isoparse(start_date)
-        start_datetime = start_datetimeobj.strftime('%Y-%m-%d %H:%M:%S')
-        st.code(start_datetimeobj)
-        st.code(start_datetime)
-        end_date = x_buy[-1] #.floor('D')
-        end_datetimeobj = parser.isoparse(end_date)
-        st.code(end_datetimeobj)
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
-        st.pyplot(fig)
-
-        fig_power = plt.figure();
-        plt.plot(dates, y_gen,label = 'Power_gen');
-        plt.plot(dates, y_cons, label = 'Power_cons');
-        plt.legend()
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
-        st.pyplot(fig_power)
-
-        fig_battopt = plt.figure();
-        plt.plot(x_battopt, y_battopt,label = 'Battery_Opt');
+        # fig = plt.figure();
+        # plt.plot(x_sale, y_sale,label = 'sell_price');
+        # plt.plot(x_buy, y_buy, label = 'buy price');
+        # plt.legend()
+        # # plt.show()
+        # # st.write(prediction)
+        # fig_power = plt.figure();
+        # plt.plot(x_gen, y_gen,label = 'Power_gen');
         # plt.plot(x_cons, y_cons, label = 'Power_cons');
-        plt.legend()
-        st.pyplot(fig_battopt)
-
-        fig_priceopt = plt.figure();
-        plt.plot(x_bpopt, y_bpopt,label = 'Buy_Price_Opt');
-        plt.plot(x_spopt, y_spopt, label = 'Sell_Price_Opt');
-        plt.plot(x_basep, y_basep, label = 'Base_Price');
-        plt.legend()
-        st.pyplot(fig_priceopt)
-
+        # plt.legend()
+        # st.pyplot(fig)
+        # st.pyplot(fig_power)
 
 
 

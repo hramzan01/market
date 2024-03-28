@@ -19,17 +19,21 @@ def predict(battery_size: int, # 5 total size
     output_keys = ['SalePrice_p/kwh', 'PurchasePrice_p/kwh', 'Generation_kwh', 'Consumption_kwh']
 
     res = run_full_model_api(int(battery_size), int(battery_charge))
-    res_pd = pd.DataFrame.from_dict(res['predicted_data']['SalePrice_p/kwh']) #pd.DataFrame.from_dict(res['predicted_data'])
-    res_pd_all= pd.DataFrame.from_dict(res['predicted_data'])
+    res_pred_saleprice = pd.DataFrame.from_dict(res['predicted_data']['SalePrice_p/kwh']) #pd.DataFrame.from_dict(res['predicted_data'])
+    res_pred_all= pd.DataFrame.from_dict(res['predicted_data'])
+    res_opt_batt= pd.DataFrame(res['optimised_battery_storage'])
+    res_opt_buyprice= pd.DataFrame(res['optimised_energy_purchase_price'])
+    res_opt_sellprice= pd.DataFrame(res['optimised_energy_sold_price'])
+    res_opt_baseprice= pd.DataFrame(res['baseline_hourly_price'])
     key_list=[]
     value_list=[]
-    data_saleprice = res_pd['SalePrice_p/kwh']
+    data_saleprice = res_pred_saleprice['SalePrice_p/kwh']
     for key, value in data_saleprice.items():
         key_list.append(key)
         value_list.append(value)
-    #return {'res':f'key is {key_list[0]} of type {type(key_list[0])} and value is {value_list[0]}'} #{"res columns": res_pd}
-    return res_pd_all
-
+    #return {'res':f'key is {key_list[0]} of type {type(key_list[0])} and value is {value_list[0]}'} #{"res columns": res_pred_saleprice}
+    output = {'prediction_data': res_pred_all, 'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice, 'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice}
+    return output
 
 @app.get("/")
 def root():

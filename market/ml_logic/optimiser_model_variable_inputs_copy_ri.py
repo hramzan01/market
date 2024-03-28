@@ -373,16 +373,27 @@ def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
     #actual_df, predicted_df = data_collect(d)
     #price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
     #baseline_cost, baseline_price = baseline_model(actual_df)
+    battery_store_list = battery_store.tolist()
+    price_energy_bought_list = price_energy_bought.tolist()
+    price_energy_sold_list = price_energy_sold.tolist()
+    baseline_price_list = baseline_price.tolist()
 
     # format the data for the api
     api_output = {
         'predicted_data':predicted_df,
         'predicted_hourly_price':price_week,
-        'optimised_battery_storage':battery_store,
-        'optimised_energy_purchase_price':price_energy_bought,
-        'optimised_energy_sold_price':price_energy_sold,
+        'optimised_battery_storage':battery_store_list,
+        'optimised_energy_purchase_price':price_energy_bought_list,
+        'optimised_energy_sold_price':price_energy_sold_list,
         'baseline_cost':baseline_cost,
-        'baseline_hourly_price':baseline_price
+        'baseline_hourly_price':baseline_price_list,
+        # 'predicted_data_ts':(type(predicted_df), predicted_df.shape),
+        # 'predicted_hourly_price_ts':type(price_week),
+        # 'optimised_battery_storage_ts':(type(battery_store_list), len(battery_store_list)),
+        # 'optimised_energy_purchase_price_ts':(type(price_energy_bought_list), len(price_energy_bought_list)),
+        # 'optimised_energy_sold_price_ts':(type(price_energy_sold_list), len(price_energy_sold_list)),
+        # 'baseline_cost_ts':type(baseline_cost),
+        # 'baseline_hourly_price_ts':(type(baseline_price_list), len(baseline_price_list))
     }
     return api_output
 
@@ -407,7 +418,7 @@ if __name__ == '__main__':
     #price_week, baseline_cost = run_full_model(d, battery_size, battery_charge, acorn='A')
     print(f'The week cost using our model is £{round(price_week/100,2)}')
     print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-
+    print (run_full_model_api(battery_size, battery_charge))
     # To evaluate model
     #abs_error = evaluate_full_model(d, battery_size, battery_charge, acorn='A')
     #print(f'Absolute error is £{abs_error}')
