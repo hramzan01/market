@@ -10,6 +10,7 @@ import os
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
+
 # Background
 st.markdown(
 
@@ -188,3 +189,47 @@ col1, col2, col3 = st.columns(3)
 col1.image(image)
 col2.metric("Avg Daily Power",total, 'kWh')
 col3.metric("Weather",wmo_description['2']['day']['description'])
+
+# Define functions for each page
+def home():
+    st.header("Home Page")
+    # Add content for the home page
+
+def about():
+    st.header("About Page")
+    # Add content for the about page
+
+def form():
+    st.header("Form Page")
+    # Add content for the form page
+
+def output():
+    st.header("Output Page")
+    # Add content for the output page
+
+# Create a sidebar navigation menu
+selected_page = st.sidebar.radio(
+    "Navigation",
+    ("Home", "About", "Form", "Output")
+)
+
+# Custom CSS for the sidebar
+sidebar_style = """
+    <style>
+        .sidebar .sidebar-content {
+            background-color: orange;
+        }
+    </style>
+"""
+st.markdown(sidebar_style, unsafe_allow_html=True)
+
+# Display the selected page based on user's choice
+if selected_page == "Home":
+    home()
+elif selected_page == "About":
+    about()
+elif selected_page == "Form":
+    form()
+elif selected_page == "Output":
+    output()
+    
