@@ -5,6 +5,8 @@ import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
 
+import matplotlib.pylab as plt
+
 # import datetime
 import requests
 
@@ -130,7 +132,7 @@ with st.form(key='params_for_api'):
 
     ########Test_API_predict
     params = {
-        'date': f'{selected_date} 00:00:00',
+        #'date': f'{selected_date} 00:00:00',
         'battery_size': Battery_Size,
         'battery_charge': Battery_Charge
     }
@@ -140,7 +142,7 @@ with st.form(key='params_for_api'):
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
 
-    st.write(f'params passed to API are {selected_date}, {Battery_Size}, and {Battery_Charge}')
+    st.write(f'params passed to API are {Battery_Size}, and {Battery_Charge}') #{selected_date}
 
     st.write(f'complete url is {complete_url}')
 
@@ -152,7 +154,28 @@ with st.form(key='params_for_api'):
     if st.form_submit_button('Submit'):
         response = requests.get(api_url, params=params)
         prediction = response.json()
-        st.write(prediction)
+        data = prediction
+        saleprice = data['SalePrice_p/kwh']
+        buyprice = data['PurchasePrice_p/kwh']
+        power_gen = data['Generation_kwh']
+        power_cons = data['Consumption_kwh']
+        x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
+        x_buy, y_buy = zip(*buyprice.items())
+        x_gen, y_gen = zip(*power_gen.items())
+        x_cons, y_cons = zip(*power_cons.items())
+
+        fig = plt.figure();
+        plt.plot(x_sale, y_sale,label = 'sell_price');
+        plt.plot(x_buy, y_buy, label = 'buy price');
+        plt.legend()
+        # plt.show()
+        # st.write(prediction)
+        fig_power = plt.figure();
+        plt.plot(x_gen, y_gen,label = 'Power_gen');
+        plt.plot(x_cons, y_cons, label = 'Power_cons');
+        plt.legend()
+        st.pyplot(fig)
+        st.pyplot(fig_power)
 
 
 
@@ -167,7 +190,7 @@ day = st.slider("Select Days", 1,7,1)
 fig = go.Figure()
 
 # Add a line trace to the figure
-fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines', name='Line Chart'))
+# fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines', name='Line Chart'))
 
 # Set title and axes labels
 fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
