@@ -28,6 +28,8 @@ warnings.simplefilter('ignore')
 
 global battery_size, battery_charge, time_points
 
+time_points = 7*24 # hours, added by Rahul from __main__
+
 def data_collect(d, acorn = 'A'):
     '''
     This function has been replaced by data_collect_save_models and prediction
