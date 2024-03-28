@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from energy_price_pred.energypricepred import *
 
-from market.ml_logic.optimiser_model_variable_inputs import *
+from market.ml_logic.optimiser_model_variable_inputs_copy_ri import *
 
 app = FastAPI()
 
