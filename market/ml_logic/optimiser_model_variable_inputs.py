@@ -394,8 +394,9 @@ if __name__ == '__main__':
     #d = datetime(2024,3,15,18,30,5) # start date of evaluation
 
     start = time.time()
-    price_week, baseline_cost = run_full_model_unsaved()
+    #price_week, baseline_cost = run_full_model_unsaved()
     #price_week, baseline_cost = run_full_model_saved()
+    run_full_model_api(battery_size, battery_charge, acorn = 'A')
     end = time.time()
 
     print(f'The model took {end - start} seconds to run')
