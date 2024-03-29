@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import requests
 import plotly.express as px
 from PIL import Image
+import time
 import os
 
 
@@ -36,6 +37,7 @@ set_bg_hack_url()
 battery_size = 5
 battery_charge = 3
 postcode = 'E1 5DY'
+name = 'Haaris'
 
 # Return Lat & Lon from postcode
 base_url = 'https://api.postcodes.io/postcodes'
@@ -44,8 +46,10 @@ response = requests.get(f'{base_url}/{postcode}').json()
 lat = response['result']['latitude']
 lon = response['result']['longitude']
 
+# Output: User visuals (this is user dashboard)
 
 with st.form(key='params_for_api'):
+    
     # Test_API_predict
     params = {
         #'date': f'{selected_date} 00:00:00',
@@ -58,7 +62,8 @@ with st.form(key='params_for_api'):
     # complete_url
     
     # Generate Dashboard when submit is triggered
-    if st.form_submit_button('Predict', use_container_width=True):
+    if st.form_submit_button('CHARGE UP 🔋', use_container_width=True):
+
         response = requests.get(api_url, params=params)
         data = response.json()
         saleprice = data['prediction_data']['SalePrice_p/kwh']
@@ -93,7 +98,7 @@ with st.form(key='params_for_api'):
                 lon=[lon],
                 mode='markers',
                 marker=go.scattermapbox.Marker(
-                    size=16,
+                    size=13,
                     color='orange'
                 ),
                 text=['London']
@@ -111,7 +116,7 @@ with st.form(key='params_for_api'):
                         lon=lon
                     ),
                     pitch=0,
-                    zoom=17
+                    zoom=16
                 ),
                 width=1280,
                 height=400
@@ -119,6 +124,11 @@ with st.form(key='params_for_api'):
             return fig
         
         st.write(london_map(lat, lon))
+        
+        # Header
+        st.header(f"{name}'s Energy Hub")
+        st.markdown('')  # Empty markdown line for spacing
+        st.markdown('')  # Empty markdown line for spacing
         
         # Split the remaining space into three columns
         col0, col1, col2 = st.columns(3)
@@ -134,8 +144,8 @@ with st.form(key='params_for_api'):
             st.image(image2, use_column_width=False)
         with col2:
             st.image(image3, use_column_width=False)
-        st.markdown('')  # Empty markdown line for spacing
 
+        st.markdown('')  # Empty markdown line for spacing
 
         # Split the remaining space into three columns
         col3, col4, col5 = st.columns(3)
@@ -158,27 +168,55 @@ with st.form(key='params_for_api'):
             fig_battopt.update_layout(width=400)
             st.plotly_chart(fig_battopt)
             
- 
-        # Output: User visuals (this is user dashboard)
-        st.header('7 Day Energy Forecast ☀️', divider='grey')
+        # Get definitiion for weather WMO codes
+        wmo_url = 'https://gist.githubusercontent.com/stellasphere/9490c195ed2b53c707087c8c2db4ec0c/raw/76b0cb0ef0bfd8a2ec988aa54e30ecd1b483495d/descriptions.json'
+        wmo_description = requests.get(wmo_url).json()
+        
+        # Forecast header
+        st.header('7 Day Energy Forecast 🗓️')
+        st.markdown('')  # Empty markdown line for spacing
+        st.markdown('')  # Empty markdown line for spacing
 
-day = st.slider("Select Days", 1,7,1)
+        # get images for weather
+        image1 = wmo_description['2']['day']['image']
+        image2 = wmo_description['3']['day']['image']
+        image3 = wmo_description['45']['day']['image']
+        image4 = wmo_description['53']['day']['image']
+        image5 = wmo_description['53']['day']['image']
+        image6 = wmo_description['45']['day']['image']
+        image7 = wmo_description['3']['day']['image']
 
-root = os.getcwd()
-data = pd.read_csv(os.path.join(root, 'app/data/final_prediction.csv'))
+        
+        # Split the columns for 7 images for 7 days of week
+        mon, tue, wed, thu, fri, sat, sun = st.columns(7)
+        
+        mon.image(image1)
+        mon.text('DAY 1')
+        
+        tue.image(image2)
+        tue.text('DAY 2')
 
-# Create a Plotly figure
-fig = go.Figure()
+        wed.image(image3)
+        wed.text('DAY 3')
 
-# Add a line trace to the figure
-fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines',fill='tozeroy', name='Line Chart'))
+        thu.image(image4)
+        thu.text('DAY 4')
 
-# Set title and axes labels
-fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
-fig.update_layout(
-    plot_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
-    paper_bgcolor='rgba(0, 0, 0, 0)',
-    width=1280 
-)
-fig.update_traces(line=dict(color='orange', width=2))  # Change 'red' to your desired color and 2 to your desired thickness
-st.plotly_chart(fig)
+        fri.image(image5)
+        fri.text('DAY 5')
+
+        sat.image(image6)
+        sat.text('DAY 6')
+
+        sun.image(image7)
+        sun.text('DAY 7')
+            
+        st.dataframe({
+            'mon': 'description of weather',
+            'tue': 'description of weather',
+            'wed': 'description of weather',
+            'thu': 'description of weather',
+            'fri': 'description of weather',
+            'sat': 'description of weather',
+            'sun': 'description of weather',
+        })
