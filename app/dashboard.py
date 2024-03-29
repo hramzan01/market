@@ -9,6 +9,29 @@ import os
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
+# Orange Background
+def set_bg_hack_url():
+    '''
+    A function to unpack an image from url and set as bg.
+    Returns
+    -------
+    The background.
+    '''
+        
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background: url("https://www.setaswall.com/wp-content/uploads/2017/12/Black-And-Orange-Wallpaper-08-1600x1200.jpg");
+             background-size: cover;
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
+set_bg_hack_url() 
+    
 # define temporary variables from profile page
 battery_size = 5
 battery_charge = 3
@@ -78,7 +101,7 @@ with st.form(key='params_for_api'):
 
             fig.update_layout(
                 autosize=True,
-                margin=dict(l=5, r=5, t=0, b=20),
+                margin=dict(l=5, r=5, t=0, b=40),
                 hovermode='closest',
                 mapbox=dict(
                     style='carto-positron',
@@ -98,75 +121,64 @@ with st.form(key='params_for_api'):
         st.write(london_map(lat, lon))
         
         # Split the remaining space into three columns
-        col1, col2, col3 = st.columns(3)
+        col0, col1, col2 = st.columns(3)
         
         # Display images
-        image1 = Image.open('app/assets/logo.png')
-        image2 = Image.open('app/assets/logo.png')
-        image3 = Image.open('app/assets/logo.png')
+        image1 = Image.open('app/assets/money.png').resize((115, 100))
+        image2 = Image.open('app/assets/energy.png').resize((100, 100))
+        image3 = Image.open('app/assets/battery.png').resize((55, 100))
+
+        with col0:
+            st.image(image1, use_column_width=False)
+        with col1:    
+            st.image(image2, use_column_width=False)
+        with col2:
+            st.image(image3, use_column_width=False)
+        st.markdown('')  # Empty markdown line for spacing
 
 
+        # Split the remaining space into three columns
+        col3, col4, col5 = st.columns(3)
         
         # First column: Buy vs Sell Price
-        with col1:
+        with col3:
             # Buy vs Sell Price
-            st.image(image1, use_column_width=True)
             fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
             fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
             st.plotly_chart(fig)
 
-        with col2:
+        with col4:
             # Power gen vs power con
-            st.image(image2, use_column_width=True)
             fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': 'Power'}, title='Power Generation vs Consumption')
             st.plotly_chart(fig_power)
 
-        with col3:
+        with col5:
             # Battery Output
-            st.image(image3, use_column_width=True)
             fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
             fig_battopt.update_layout(width=400)
             st.plotly_chart(fig_battopt)
             
  
         # Output: User visuals (this is user dashboard)
-        st.header('Your Output', divider='grey')
+        st.header('7 Day Energy Forecast ☀️', divider='grey')
 
-        day = st.slider("Select Days", 1,7,1)
+day = st.slider("Select Days", 1,7,1)
 
-        root = os.getcwd()
-        data = pd.read_csv(os.path.join(root, 'app/data/final_prediction.csv'))
+root = os.getcwd()
+data = pd.read_csv(os.path.join(root, 'app/data/final_prediction.csv'))
 
-        # Create a Plotly figure
-        fig = go.Figure()
+# Create a Plotly figure
+fig = go.Figure()
 
-        # Add a line trace to the figure
+# Add a line trace to the figure
+fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines',fill='tozeroy', name='Line Chart'))
 
-        fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines',fill='tozeroy', name='Line Chart'))
-
-
-        # Set title and axes labels
-        fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
-        fig.update_layout(
-            plot_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
-            paper_bgcolor='rgba(0, 0, 0, 0)'   # Transparent background
-        # Transparent background
-        )
-        # fig.update_traces(line=dict(color='red', width=2))  # Change 'red' to your desired color and 2 to your desired thickness
-        # Display the Plotly figure in Streamlit
-        st.plotly_chart(fig)
-
-        # Define CSS style
-        css = """
-            <style>
-                .container {
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                }
-                column {
-                    background-color: #808080;
-                }
-            </style>
-        """
+# Set title and axes labels
+fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
+fig.update_layout(
+    plot_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
+    paper_bgcolor='rgba(0, 0, 0, 0)',
+    width=1280 
+)
+fig.update_traces(line=dict(color='orange', width=2))  # Change 'red' to your desired color and 2 to your desired thickness
+st.plotly_chart(fig)
