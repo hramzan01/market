@@ -6,6 +6,21 @@ import plotly.express as px
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
+# define temporary variables from profile page
+battery_size = 5
+battery_charge = 3
+postcode = 'E1 5DY'
+
+# Return Lat & Lon from postcode
+base_url = 'https://api.postcodes.io/postcodes'
+response = requests.get(f'{base_url}/{postcode}').json()
+
+lat = response['result']['latitude']
+lon = response['result']['longitude']
+
+lat
+lon
+
 with st.form(key='params_for_api'):
     # Test_API_predict
     params = {
@@ -44,6 +59,38 @@ with st.form(key='params_for_api'):
         dates = pd.to_datetime(x_buy)
 
         '''VISUALS'''
+        
+        # plotly map
+        @st.cache_data
+        def london_map(lat, lon):
+            # Create a Plotly figure with Mapbox
+            fig = go.Figure(go.Scattermapbox(
+                lat=[lat],
+                lon=[lon],
+                mode='markers',
+                marker=go.scattermapbox.Marker(
+                    size=14
+                ),
+                text=['London'],
+            ))
+
+            fig.update_layout(
+                autosize=True,
+                hovermode='closest',
+                mapbox=dict(
+                    style='carto-positron',
+                    bearing=0,
+                    center=dict(
+                        lat=lat,
+                        lon=lon
+                    ),
+                    pitch=0,
+                    zoom=15
+                ),
+            )
+            return fig
+        st.write(london_map(lat, lon))
+        
         # Buy vs Sell Price
         fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
         fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
