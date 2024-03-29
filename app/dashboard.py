@@ -3,8 +3,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import requests
 import plotly.express as px
+from PIL import Image
+import os
 
-st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
+
+st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
 # define temporary variables from profile page
 battery_size = 5
@@ -18,8 +21,6 @@ response = requests.get(f'{base_url}/{postcode}').json()
 lat = response['result']['latitude']
 lon = response['result']['longitude']
 
-lat
-lon
 
 with st.form(key='params_for_api'):
     # Test_API_predict
@@ -31,9 +32,10 @@ with st.form(key='params_for_api'):
 
     api_url = 'http://127.0.0.1:8000/predict'
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
+    # complete_url
     
     # Generate Dashboard when submit is triggered
-    if st.form_submit_button('Predict'):
+    if st.form_submit_button('Predict', use_container_width=True):
         response = requests.get(api_url, params=params)
         data = response.json()
         saleprice = data['prediction_data']['SalePrice_p/kwh']
@@ -58,8 +60,7 @@ with st.form(key='params_for_api'):
 
         dates = pd.to_datetime(x_buy)
 
-        '''VISUALS'''
-        
+        # VISUALS
         # plotly map
         @st.cache_data
         def london_map(lat, lon):
@@ -69,13 +70,15 @@ with st.form(key='params_for_api'):
                 lon=[lon],
                 mode='markers',
                 marker=go.scattermapbox.Marker(
-                    size=14
+                    size=16,
+                    color='orange'
                 ),
-                text=['London'],
+                text=['London']
             ))
 
             fig.update_layout(
                 autosize=True,
+                margin=dict(l=5, r=5, t=0, b=20),
                 hovermode='closest',
                 mapbox=dict(
                     style='carto-positron',
@@ -85,27 +88,85 @@ with st.form(key='params_for_api'):
                         lon=lon
                     ),
                     pitch=0,
-                    zoom=15
+                    zoom=17
                 ),
+                width=1280,
+                height=400
             )
             return fig
+        
         st.write(london_map(lat, lon))
         
-        # Buy vs Sell Price
-        fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
-        fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
+        # Split the remaining space into three columns
+        col1, col2, col3 = st.columns(3)
+        
+        # Display images
+        image1 = Image.open('app/assets/logo.png')
+        image2 = Image.open('app/assets/logo.png')
+        image3 = Image.open('app/assets/logo.png')
+
+
+        
+        # First column: Buy vs Sell Price
+        with col1:
+            # Buy vs Sell Price
+            st.image(image1, use_column_width=True)
+            fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
+            fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
+            st.plotly_chart(fig)
+
+        with col2:
+            # Power gen vs power con
+            st.image(image2, use_column_width=True)
+            fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': 'Power'}, title='Power Generation vs Consumption')
+            st.plotly_chart(fig_power)
+
+        with col3:
+            # Battery Output
+            st.image(image3, use_column_width=True)
+            fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+            fig_battopt.update_layout(width=400)
+            st.plotly_chart(fig_battopt)
+            
+ 
+        # Output: User visuals (this is user dashboard)
+        st.header('Your Output', divider='grey')
+
+        day = st.slider("Select Days", 1,7,1)
+
+        root = os.getcwd()
+        data = pd.read_csv(os.path.join(root, 'app/data/final_prediction.csv'))
+
+        # Create a Plotly figure
+        fig = go.Figure()
+
+        # Add a line trace to the figure
+
+        fig.add_trace(go.Scatter(y=data['kwh'][0:(day*24)], mode='lines',fill='tozeroy', name='Line Chart'))
+
+
+        # Set title and axes labels
+        fig.update_layout(title='Line Chart', xaxis_title='X-axis', yaxis_title='Y-axis')
+        fig.update_layout(
+            plot_bgcolor='rgba(0, 0, 0, 0)',  # Transparent background
+            paper_bgcolor='rgba(0, 0, 0, 0)'   # Transparent background
+        # Transparent background
+        )
+        # fig.update_traces(line=dict(color='red', width=2))  # Change 'red' to your desired color and 2 to your desired thickness
+        # Display the Plotly figure in Streamlit
         st.plotly_chart(fig)
 
-        # Power gen vs power con
-        fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': 'Power'}, title='Power Generation vs Consumption')
-        st.plotly_chart(fig_power)
-
-        # Battery Output
-        fig_battopt = px.line(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
-        st.plotly_chart(fig_battopt)
-
-        # Buy price vs sell price vs base price
-        fig_priceopt = px.line(x=x_bpopt, y=y_bpopt, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell vs Base Price')
-        fig_priceopt.add_scatter(x=x_spopt, y=y_spopt, mode='lines', name='Sell Price')
-        fig_priceopt.add_scatter(x=x_basep, y=y_basep, mode='lines', name='Base Price')
-        st.plotly_chart(fig_priceopt)
+        # Define CSS style
+        css = """
+            <style>
+                .container {
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                }
+                column {
+                    background-color: #808080;
+                }
+            </style>
+        """
