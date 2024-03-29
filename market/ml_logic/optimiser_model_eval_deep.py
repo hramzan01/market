@@ -138,7 +138,8 @@ def optimiser_model(data, battery_charge, battery_size):
             x0[i] = df[i,3] - df[i,2]
             x1[i] = 0
         else:
-            df[i,4] = 0
+            x0[i] = 0
+            x1[i] = 0
     # Set bounds
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
@@ -154,7 +155,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':100000, 'disp': True}
+        options={'xatol': 1e-14, 'maxiter':100000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -237,13 +238,15 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
     '''
     Function for running the evaluation function multiple times and saving the reults
     '''
-    d = datetime(2023,1,1,00,00,0)
+    d = datetime(2023,10,9,00,00,0)
     td = timedelta(days=7)
     df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[]}, index = [])
 
-    for i in range(52):
+    for i in range(26):
         print(f'model {i} evaluation in progress...')
         actual_df, predicted_df = data_collect(d)
+        actual_df = actual_df.iloc[:time_points]
+        predicted_df = predicted_df.iloc[:time_points]
         # Use actual data
         actual_price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(actual_df,battery_charge=battery_charge, battery_size = battery_size)
         # Use predicted data
@@ -383,8 +386,8 @@ def optimise_model_method(battery_size, battery_charge, acorn = 'A'):
     for i in range(len(models)):
         print(f'model {i} evaluation in progress...')
         actual_df, predicted_df = data_collect(d)
-        actual_df = actual_df.iloc[:72]
-        predicted_df = predicted_df.iloc[:72]
+        actual_df = actual_df.iloc[:time_points]
+        predicted_df = predicted_df.iloc[:time_points]
         # Use actual data
         actual_price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_var_model(actual_df,battery_charge=battery_charge, battery_size = battery_size, model = models[i])
         # Use predicted data
