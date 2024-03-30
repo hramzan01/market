@@ -23,8 +23,9 @@ def set_bg_hack_url():
          f"""
          <style>
          .stApp {{
-             background: url("https://www.setaswall.com/wp-content/uploads/2017/12/Black-And-Orange-Wallpaper-08-1600x1200.jpg");
+             background: url("https://cdn.pixabay.com/photo/2024/03/29/23/23/23-23-40-900_1280.png");
              background-size: cover;
+             background-attachment: fixed;
          }}
          </style>
          """,
@@ -63,9 +64,21 @@ with st.form(key='params_for_api'):
     
     # Generate Dashboard when submit is triggered
     if st.form_submit_button('CHARGE UP 🔋', use_container_width=True):
-
+        
+        # Simulate progress bar
+        progress_text = "Charging up... Please wait."
+        my_bar = st.progress(0, text=progress_text)
+        
+        for percent_complete in range(100):
+            time.sleep(0.3)
+            my_bar.progress(percent_complete + 1, text=progress_text)
+        time.sleep(1)
+        my_bar.empty()
+        
+        # Make API call
         response = requests.get(api_url, params=params)
         data = response.json()
+        
         saleprice = data['prediction_data']['SalePrice_p/kwh']
         buyprice = data['prediction_data']['PurchasePrice_p/kwh']
         power_gen = data['prediction_data']['Generation_kwh']
@@ -90,6 +103,7 @@ with st.form(key='params_for_api'):
 
         # VISUALS
         # plotly map
+        
         @st.cache_data
         def london_map(lat, lon):
             # Create a Plotly figure with Mapbox
@@ -126,7 +140,7 @@ with st.form(key='params_for_api'):
         st.write(london_map(lat, lon))
         
         # Header
-        st.header(f"{name}'s Energy Hub")
+        st.subheader(f"{name}'s Energy Hub")
         st.markdown('')  # Empty markdown line for spacing
         st.markdown('')  # Empty markdown line for spacing
         
@@ -173,7 +187,7 @@ with st.form(key='params_for_api'):
         wmo_description = requests.get(wmo_url).json()
         
         # Forecast header
-        st.header('7 Day Energy Forecast 🗓️')
+        st.subheader('7 Day Energy Forecast')
         st.markdown('')  # Empty markdown line for spacing
         st.markdown('')  # Empty markdown line for spacing
 
@@ -211,12 +225,3 @@ with st.form(key='params_for_api'):
         sun.image(image7)
         sun.text('DAY 7')
             
-        st.dataframe({
-            'mon': 'description of weather',
-            'tue': 'description of weather',
-            'wed': 'description of weather',
-            'thu': 'description of weather',
-            'fri': 'description of weather',
-            'sat': 'description of weather',
-            'sun': 'description of weather',
-        })
