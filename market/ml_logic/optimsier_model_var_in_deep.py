@@ -359,10 +359,13 @@ if __name__ == '__main__':
     end = time.time()
 
     # print statements
-    print(f'The model took {end - start} seconds to run')
+    print(f'The model took {round(end - start),2} seconds to run')
     #print(api_output['weather_code'])
+    print('Baseline cost no solar:')
     print(round(api_output['baseline_cost_no_solar']/100,2))
+    print('Baseline cost solar:')
     print(round(api_output['baseline_cost']/100,2))
+    print('Cost our prediction:')
     print(round(api_output['predicted_hourly_price']/100,2))
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
