@@ -118,7 +118,7 @@ st.header('Form', divider='grey')
 with st.form(key='params_for_api'):
     Postcode = st.text_input("Postcode", "")
     House_price = st.number_input("House price", step=10000)
-    Income = st.number_input("Income", step=10000)
+    Income = st.number_input("Income", step=1)
     Battery_Size = st.number_input("Battery Size", step=1)
     Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
     House_type = ["Bungalow","Terraced house", "Detached house", "Flat or maisonette", "Semi-detached house"]
@@ -130,7 +130,8 @@ with st.form(key='params_for_api'):
     params = {
         #'date': f'{selected_date} 00:00:00',
         'battery_size': Battery_Size,
-        'battery_charge': Battery_Charge
+        'battery_charge': Battery_Charge,
+        'solar_size': Income
     }
 
     api_url = 'http://127.0.0.1:8000/predict'
@@ -138,7 +139,7 @@ with st.form(key='params_for_api'):
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
 
-    st.write(f'params passed to API are {Battery_Size}, and {Battery_Charge}') #{selected_date}
+    st.write(f'params passed to API are {Battery_Size}, {Battery_Charge} and {Income}') #{selected_date}
 
     st.write(f'complete url is {complete_url}')
 

@@ -9,6 +9,49 @@ import matplotlib.pylab as plt
 import time
 # import datetime
 import requests
+from market.ml_logic.optimsier_model_var_in_deep import *
+
+
+########################
+
+def predict(battery_size: int, # 5 total size
+            battery_charge: int,
+            solar_size: float): # 1 initial charge amount
+    """predicting Buy/Sell price as first pass"""
+
+    # date=pd.Timestamp(date)
+    output_keys = ['SalePrice_p/kwh', 'PurchasePrice_p/kwh', 'Generation_kwh', 'Consumption_kwh']
+
+    res = run_full_model_api(int(battery_size), int(battery_charge), solar_size)
+
+    res_pred_saleprice = res['predicted_data']['SalePrice_p/kwh'] #pd.DataFrame.from_dict(res['predicted_data'])
+    res_pred_purchaseprice = res['predicted_data']['PurchasePrice_p/kwh']
+    res_pred_gen = res['predicted_data']['Generation_kwh']
+    res_pred_cons = res['predicted_data']['Consumption_kwh']
+
+    res_pred_all= pd.DataFrame.from_dict(res['predicted_data'])#pd.DataFrame.from_dict(res['predicted_data'])
+
+    res_opt_batt= pd.DataFrame(res['optimised_battery_storage'])
+    res_opt_buyprice= pd.DataFrame(res['optimised_energy_purchase_price'])
+    res_opt_sellprice= pd.DataFrame(res['optimised_energy_sold_price'])
+    res_opt_baseprice= pd.DataFrame(res['baseline_hourly_price'])
+    res_weather_code = res['weather_code']
+    res_weather_code_reset = res_weather_code.reset_index()
+    res_weather_code_reset = res_weather_code_reset.drop(columns=['ds'])
+    res_weather_code_reset = res_weather_code_reset['weather_code'].tolist()
+
+    # output = {'prediction_data': res_pred_all}#, 'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
+    #           #'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice}#,
+    #           #'res_weather_code': res_weather_code_reset}
+    output = {'prediction_saleprice': res_pred_saleprice, 'prediction_purchaseprice': res_pred_purchaseprice,
+               'prediction_gen': res_pred_gen.tolist(),
+               'prediction_cons': res_pred_cons,
+              'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
+              'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice,
+              'res_weather_code': res_weather_code_reset}
+    return output# {'keys': str(res.keys())}
+
+########################
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed")
 
@@ -148,15 +191,15 @@ with st.form(key='params_for_api'):
     # api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'https://marketpricelightver2-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'https://marketpricelightver3-d2w7qz766q-ew.a.run.app/predict'
-    api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict'
+    # api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'http://127.0.0.1:8000/predict'
     # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
 
-    complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
+    # complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
 
     st.write(f'params passed to API are {Battery_Size}, {Battery_Charge}, and {Solar_Panel_Size}') #{selected_date}
 
-    st.write(f'complete url is {complete_url}')
+    # st.write(f'complete url is {complete_url}')
 
     # if st.form_submit_button('Submit'):
     #     response = requests.get(api_url, params=params)
@@ -165,8 +208,8 @@ with st.form(key='params_for_api'):
 
     if st.form_submit_button('Submit'):
         start_time = time.time()
-        response = requests.get(api_url, params=params)
-        data = response.json()
+        # response = requests.get(api_url, params=params)
+        data = predict(Battery_Size, Battery_Charge, Solar_Panel_Size)
 
         # saleprice = data['prediction_data']['SalePrice_p/kwh']
         # buyprice = data['prediction_data']['PurchasePrice_p/kwh']
@@ -178,10 +221,10 @@ with st.form(key='params_for_api'):
         power_gen = data['prediction_gen']
         power_cons = data['prediction_cons']
 
-        res_opt_batt = data['res_opt_batt']['0']
-        res_opt_buyprice = data['res_opt_buyprice']['0']
-        res_opt_sellprice = data['res_opt_sellprice']['0']
-        res_opt_baseprice = data['res_opt_baseprice']['0']
+        # res_opt_batt = data['res_opt_batt']['0']
+        # res_opt_buyprice = data['res_opt_buyprice']['0']
+        # res_opt_sellprice = data['res_opt_sellprice']['0']
+        # res_opt_baseprice = data['res_opt_baseprice']['0']
         res_weather_code = data['res_weather_code']
 
         # saleprice = pd.DataFrame(data['prediction_data']['SalePrice_p/kwh'])
@@ -199,10 +242,10 @@ with st.form(key='params_for_api'):
         y_gen = power_gen #x_gen, y_gen = zip(*power_gen.items())
         x_cons, y_cons = zip(*power_cons.items())
 
-        x_battopt, y_battopt = zip(*res_opt_batt.items())
-        x_bpopt, y_bpopt = zip(*res_opt_buyprice.items())
-        x_spopt, y_spopt = zip(*res_opt_sellprice.items())
-        x_basep, y_basep = zip(*res_opt_baseprice.items())
+        # x_battopt, y_battopt = zip(*res_opt_batt.items())
+        # x_bpopt, y_bpopt = zip(*res_opt_buyprice.items())
+        # x_spopt, y_spopt = zip(*res_opt_sellprice.items())
+        # x_basep, y_basep = zip(*res_opt_baseprice.items())
 
         dates = pd.to_datetime(x_buy)
 
@@ -210,44 +253,44 @@ with st.form(key='params_for_api'):
         plt.plot(dates, y_sale,label = 'sell_price');
         plt.plot(dates, y_buy, label = 'buy price');
         plt.legend()
-        start_date = (x_buy[0]) #.floor('D')
-        start_datetimeobj = parser.isoparse(start_date)
-        start_datetime = start_datetimeobj.strftime('%Y-%m-%d %H:%M:%S')
-        st.code(start_datetimeobj)
-        st.code(start_datetime)
-        end_date = x_buy[-1] #.floor('D')
-        end_datetimeobj = parser.isoparse(end_date)
-        st.code(end_datetimeobj)
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        # start_date = (x_buy[0]) #.floor('D')
+        # start_datetimeobj = parser.isoparse(start_date)
+        # start_datetime = start_datetimeobj.strftime('%Y-%m-%d %H:%M:%S')
+        # st.code(start_datetimeobj)
+        # st.code(start_datetime)
+        # end_date = x_buy[-1] #.floor('D')
+        # end_datetimeobj = parser.isoparse(end_date)
+        # st.code(end_datetimeobj)
+        # plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         st.pyplot(fig)
 
         fig_power = plt.figure();
         plt.plot(dates, y_gen,label = 'Power_gen');
         plt.plot(dates, y_cons, label = 'Power_cons');
         plt.legend()
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        # plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         st.pyplot(fig_power)
 
-        st.code(len(dates))
-        st.code(len(x_battopt))
-        fig_battopt = plt.figure();
-        plt.plot(dates, y_battopt[1:],label = 'Battery_Opt');
-        plt.plot(dates, y_cons, label = 'Power_cons');
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
-        plt.legend()
-        st.pyplot(fig_battopt)
+        # st.code(len(dates))
+        # st.code(len(x_battopt))
+        # fig_battopt = plt.figure();
+        # plt.plot(dates, y_battopt[1:],label = 'Battery_Opt');
+        # plt.plot(dates, y_cons, label = 'Power_cons');
+        # plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        # plt.legend()
+        # st.pyplot(fig_battopt)
 
-        fig_priceopt = plt.figure();
-        plt.plot(dates, y_bpopt,label = 'Buy_Price_Opt');
-        plt.plot(dates, y_spopt, label = 'Sell_Price_Opt');
-        plt.plot(dates, y_basep, label = 'Base_Price');
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
-        plt.legend()
-        st.pyplot(fig_priceopt)
+        # fig_priceopt = plt.figure();
+        # plt.plot(dates, y_bpopt,label = 'Buy_Price_Opt');
+        # plt.plot(dates, y_spopt, label = 'Sell_Price_Opt');
+        # plt.plot(dates, y_basep, label = 'Base_Price');
+        # plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        # plt.legend()
+        # st.pyplot(fig_priceopt)
 
         fig_weathercode = plt.figure();
         plt.plot(dates, res_weather_code,label = 'Weather_code');
-        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        # plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         plt.legend()
         st.pyplot(fig_weathercode)
 
