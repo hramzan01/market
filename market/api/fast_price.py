@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from energy_price_pred.energypricepred import *
 import json
-from market.ml_logic.optimiser_model_variable_inputs_copy_ri2 import *
+from market.ml_logic.optimsier_model_var_in_deep import *
 
 import matplotlib.pylab as plt
 
@@ -12,16 +12,22 @@ app = FastAPI()
 
 @app.get("/predict")
 def predict(battery_size: int, # 5 total size
-            battery_charge: int): # 1 initial charge amount
+            battery_charge: int,
+            solar_size: float): # 1 initial charge amount
     """predicting Buy/Sell price as first pass"""
 
     # date=pd.Timestamp(date)
     output_keys = ['SalePrice_p/kwh', 'PurchasePrice_p/kwh', 'Generation_kwh', 'Consumption_kwh']
 
-    res = run_full_model_api(int(battery_size), int(battery_charge))
+    res = run_full_model_api(int(battery_size), int(battery_charge), solar_size)
 
-    res_pred_saleprice = pd.DataFrame.from_dict(res['predicted_data']['SalePrice_p/kwh']) #pd.DataFrame.from_dict(res['predicted_data'])
-    res_pred_all= res['predicted_data']#pd.DataFrame.from_dict(res['predicted_data'])
+    res_pred_saleprice = res['predicted_data']['SalePrice_p/kwh'] #pd.DataFrame.from_dict(res['predicted_data'])
+    res_pred_purchaseprice = res['predicted_data']['PurchasePrice_p/kwh']
+    res_pred_gen = res['predicted_data']['Generation_kwh']
+    res_pred_cons = res['predicted_data']['Consumption_kwh']
+
+    res_pred_all= pd.DataFrame.from_dict(res['predicted_data'])#pd.DataFrame.from_dict(res['predicted_data'])
+
     res_opt_batt= pd.DataFrame(res['optimised_battery_storage'])
     res_opt_buyprice= pd.DataFrame(res['optimised_energy_purchase_price'])
     res_opt_sellprice= pd.DataFrame(res['optimised_energy_sold_price'])
@@ -31,7 +37,13 @@ def predict(battery_size: int, # 5 total size
     res_weather_code_reset = res_weather_code_reset.drop(columns=['ds'])
     res_weather_code_reset = res_weather_code_reset['weather_code'].tolist()
 
-    output = {'prediction_data': res_pred_all, 'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
+    # output = {'prediction_data': res_pred_all}#, 'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
+    #           #'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice}#,
+    #           #'res_weather_code': res_weather_code_reset}
+    output = {'prediction_saleprice': res_pred_saleprice, 'prediction_purchaseprice': res_pred_purchaseprice,
+               'prediction_gen': res_pred_gen.tolist(),
+               'prediction_cons': res_pred_cons,
+              'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
               'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice,
               'res_weather_code': res_weather_code_reset}
     return output# {'keys': str(res.keys())}
