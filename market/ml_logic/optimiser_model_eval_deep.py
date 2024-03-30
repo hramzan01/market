@@ -443,9 +443,9 @@ if __name__ == '__main__':
     ############# should be 7*24
     time_points = 3*24 # hours
     #d = datetime(2023,1,1,0,0,0) # start date for evaluation
-    df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
-    print(df)
-    #df = optimise_model_method(battery_size, battery_charge, acorn = 'A')
+    #df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
+    #print(df)
+    df = optimise_model_method(battery_size, battery_charge, acorn = 'A')
     #print(df)
 
 
