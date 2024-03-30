@@ -137,7 +137,8 @@ with st.form(key='params_for_api'):
         'battery_charge': Battery_Charge
     }
 
-    api_url = 'http://127.0.0.1:8000/predict'
+    api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
+    # api_url = 'http://127.0.0.1:8000/predict'
     # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
@@ -209,16 +210,20 @@ with st.form(key='params_for_api'):
         plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         st.pyplot(fig_power)
 
+        st.code(len(dates))
+        st.code(len(x_battopt))
         fig_battopt = plt.figure();
-        plt.plot(x_battopt, y_battopt,label = 'Battery_Opt');
-        # plt.plot(x_cons, y_cons, label = 'Power_cons');
+        plt.plot(dates, y_battopt[1:],label = 'Battery_Opt');
+        plt.plot(dates, y_cons, label = 'Power_cons');
+        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         plt.legend()
         st.pyplot(fig_battopt)
 
         fig_priceopt = plt.figure();
-        plt.plot(x_bpopt, y_bpopt,label = 'Buy_Price_Opt');
-        plt.plot(x_spopt, y_spopt, label = 'Sell_Price_Opt');
-        plt.plot(x_basep, y_basep, label = 'Base_Price');
+        plt.plot(dates, y_bpopt,label = 'Buy_Price_Opt');
+        plt.plot(dates, y_spopt, label = 'Sell_Price_Opt');
+        plt.plot(dates, y_basep, label = 'Base_Price');
+        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         plt.legend()
         st.pyplot(fig_priceopt)
 
