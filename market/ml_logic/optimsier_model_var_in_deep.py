@@ -301,11 +301,13 @@ def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
     api_output = {
         'predicted_data':predicted_df,
         'predicted_hourly_price':price_week,
-        'optimised_battery_storage':battery_store,
-        'optimised_energy_purchase_price':price_energy_bought,
-        'optimised_energy_sold_price':price_energy_sold,
+        'optimised_battery_storage':battery_store_list,
+        'optimised_energy_purchase_price':price_energy_bought_list,
+        'optimised_energy_sold_price':price_energy_sold_list,
         'baseline_cost':baseline_cost,
-        'baseline_hourly_price':baseline_price,
+        'baseline_hourly_price':baseline_price_list,
+        'baseline_price_no_solar':baseline_price_no_solar_list,
+        'baseline_cost_no_solar':baseline_cost_no_solar,
         'weather_code': weather_code
     }
     return api_output
