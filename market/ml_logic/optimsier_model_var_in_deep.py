@@ -19,9 +19,9 @@ from datetime import timedelta
 import os
 import time
 
-from cons_model import *
-from energy_price_model import *
-from gen_model_deep import *
+from market.ml_logic.cons_model import *
+from market.ml_logic.energy_price_model import *
+from market.ml_logic.gen_model_deep import *
 
 import warnings
 warnings.simplefilter('ignore')
@@ -351,7 +351,7 @@ if __name__ == '__main__':
     time_points = 3*24 # hours
 
     start = time.time()
-    #run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
+    run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
     start = time.time()
     api_output = run_full_model_api(battery_size, battery_charge, acorn = 'A')
     #price_week, baseline_cost = run_full_model_unsaved()
@@ -359,13 +359,13 @@ if __name__ == '__main__':
     end = time.time()
 
     # print statements
-    print(f'The model took {round(end - start),2} seconds to run')
+    print(f'The model took {round((end - start),1)} seconds to run')
     #print(api_output['weather_code'])
     print('Baseline cost no solar:')
-    print(round(api_output['baseline_cost_no_solar']/100,2))
+    print(f"{round(api_output['baseline_cost_no_solar']/100,2)}")
     print('Baseline cost solar:')
-    print(round(api_output['baseline_cost']/100,2))
+    print(f"£{round(api_output['baseline_cost']/100,2)}")
     print('Cost our prediction:')
-    print(round(api_output['predicted_hourly_price']/100,2))
+    print(f"£{round(api_output['predicted_hourly_price']/100,2)}")
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
