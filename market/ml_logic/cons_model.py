@@ -59,7 +59,7 @@ def cons_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     X_train = data.iloc[:date_index]
 
     # Create Prophet model
-    m = Prophet()
+    m = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=True)
     m.fit(X_train)
     print('Energy consumption model created')
 
@@ -117,7 +117,7 @@ def cons_save_model(X ='A', date=datetime(2024,3,19,18,00,0)):
     X_train = data.iloc[:date_index]
 
     # Create Prophet model
-    m = Prophet()
+    m = Prophet(yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=True)
     m.fit(X_train)
     print('Energy consumption model saved')
 
