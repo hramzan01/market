@@ -97,7 +97,7 @@ def page_dashboard():
             'battery_size': 5,
             'battery_charge': 3
         }
-        api_url = 'http://127.0.0.1:8000/predict'
+        api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict?battery_size=5&battery_charge=1'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
         # complete_url
         # Generate Dashboard when submit is triggered
