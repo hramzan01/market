@@ -187,7 +187,7 @@ def get_test_data(d):
 
     dates = training_sample[['timestamp']]
     dates['timestamp'] = pd.to_datetime(dates['timestamp']).dt.tz_localize(None)
-
+    #print(dates['timestamp'][dates['timestamp'] - d >= timedelta(0)].iloc[:24])
     X_test = X[dates['timestamp'] - d >= timedelta(0)]
     X_test = X_test[:168]
     y_test = y[dates['timestamp'] - d >= timedelta(0)]
@@ -384,12 +384,13 @@ if __name__ == '__main__':
     #X_train, X_test, y_train, y_test = get_training_data()
     #scaled_X_train, scaled_X_test, scaled_y_train, scaled_y_test = preprocess_data(X_train, X_test, y_train, y_test)
     #model = train_model(scaled_X_train, scaled_X_test, scaled_y_train, scaled_y_test)
-    final_prediction = get_prediction()
-    print(final_prediction)
+    #final_prediction = get_prediction()
+    #print(final_prediction)
     #d = datetime(2024,3,28,00,00,0) # start date of evaluation
+    d = datetime(2023,3,4,00,00,0)
     #print(d)
-    #df_results = weekly_validation(d)
-    #print(df_results)
-
+    df_results = weekly_validation(d)
+    #print(df_results.iloc[10:])
+    #print(df_results.columns)
 
     #save_gen_model()

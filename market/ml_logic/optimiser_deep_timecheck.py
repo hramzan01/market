@@ -26,12 +26,11 @@ from market.ml_logic.gen_model_deep import *
 import warnings
 warnings.simplefilter('ignore')
 
-global battery_size, battery_charge, time_points, solar_size
+global battery_size, battery_charge, time_points
 
 battery_size = 10 # total size
 battery_charge = 5 # initial charge amount
-time_points = 7*24 # hours
-solar_size = 2 # kW
+time_points = 3*24 # hours
 
 def data_collect_save_models(d, acorn = 'A'):
     '''
@@ -44,7 +43,7 @@ def data_collect_save_models(d, acorn = 'A'):
     #save_gen_model()
 
 
-def data_collect_prediction(d_input,solar_size, acorn = 'A'):
+def data_collect_prediction(d_input, acorn = 'A'):
     '''
     This function takes in the start date of interest
     and collects the predictions from the three other models
@@ -55,19 +54,27 @@ def data_collect_prediction(d_input,solar_size, acorn = 'A'):
     d=d_input.replace(hour = 0, minute = 0, second = 0)
 
     # Run the price model
+    start_time = time.time()
     price_pred = price_load_model(d, forecast_days = 7)
     price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
+    print(time.time() - start_time)
+
     # Run the consumption model
+    start_time = time.time()
     cons_prediction = cons_load_model(d, forecasted_days = 7)
     cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
+    print(time.time() - start_time)
+
     # Run the Generation model
+    start_time = time.time()
     gen = get_prediction()
     gen['ds']=price_pred.reset_index()['ds']
     gen.set_index('ds', inplace = True)
     weather_code = gen.drop(columns =['kwh'])
     gen.drop(columns = ['weather_code'], inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    gen = gen / 1000 * solar_size
+    gen = gen / 500
+    print(time.time() - start_time)
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
@@ -236,9 +243,7 @@ def baseline_model_no_solar(data):
     baseline_cost_no_solar = np.sum(df[:,4])
     return baseline_price_no_solar, baseline_cost_no_solar
 
-
-
-def run_full_model_unsaved(battery_size = 10, battery_charge = 1, acorn = 'A'):
+def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -251,48 +256,7 @@ def run_full_model_unsaved(battery_size = 10, battery_charge = 1, acorn = 'A'):
     # Save the new model
     data_collect_save_models(date, acorn = acorn)
     # Make the  prediction
-    predicted_df, weather_code = data_collect_prediction(d_input = date, acorn = acorn)
-    predicted_df = predicted_df.iloc[:time_points]
-    # Optimise for profit
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
-    # Compare to baseline
-    baseline_cost, baseline_price = baseline_model(predicted_df)
-    return price_week, baseline_cost
-
-
-def run_full_model_saved(battery_size=10, battery_charge=1, acorn = 'A'):
-    '''
-    This function runs the full model and for optimising profit
-    The model outputs the cost for one week based on the optimised scenario
-    And outputs the cost for one week for the baseline scenario
-    '''
-    # Find current date and time
-    date = datetime.now()
-    date = date.replace(minute = 0, second = 0, microsecond = 0)
-    # Make the  prediction
-    predicted_df, weather_code = data_collect_prediction(d_input = date, acorn = acorn)
-    predicted_df = predicted_df.iloc[:time_points]
-    # Optimise for profit
-    price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
-    # Compare to baseline
-    baseline_cost, baseline_price = baseline_model(predicted_df)
-    return price_week, baseline_cost
-
-
-def run_full_model_api_unsaved(battery_size, battery_charge, solar_size, acorn = 'A'):
-    '''
-    This function runs the full model and for optimising profit
-    The model outputs the cost for one week based on the optimised scenario
-    And outputs the cost for one week for the baseline scenario
-    This model assumes
-    '''
-    # Find current date and time
-    date = datetime.now()
-    date = date.replace(minute = 0, second = 0, microsecond = 0)
-    # Save the new model
-    data_collect_save_models(date, acorn = acorn)
-    # Make the  prediction
-    predicted_df, weather_code  = data_collect_prediction(d_input = date,solar_size =solar_size, acorn = acorn)
+    predicted_df, weather_code  = data_collect_prediction(d_input = date, acorn = acorn)
     predicted_df = predicted_df.iloc[:time_points]
     # Optimise for profit
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
@@ -323,33 +287,47 @@ def run_full_model_api_unsaved(battery_size, battery_charge, solar_size, acorn =
     return api_output
 
 
-def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
+def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
     And outputs the cost for one week for the baseline scenario for the api
     '''
+    my_time = []
     # Find current date and time
     date = datetime.now()
     date = date.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
+
     # Make the  prediction
     #predicted_df = data_collect_prediction(d_input = date, acorn = acorn)
-    predicted_df, weather_code  = data_collect_prediction(d_input = date, solar_size = solar_size, acorn = acorn)
+    start = time.time()
+    predicted_df, weather_code  = data_collect_prediction(d_input = date, acorn = acorn)
     predicted_df = predicted_df.iloc[:time_points]
+    end = time.time()
+    my_time.append(end-start)
+
     # Optimise for profit
+    start = time.time()
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
+    end = time.time()
+    my_time.append(end-start)
+
     # Compare to baseline
+    start = time.time()
     baseline_cost, baseline_price = baseline_model(predicted_df)
     baseline_price_no_solar, baseline_cost_no_solar = baseline_model_no_solar(predicted_df)
+    end = time.time()
+    my_time.append(end-start)
 
+    # format the data for the api
+    start = time.time()
     battery_store_list = battery_store.tolist()
     price_energy_bought_list = price_energy_bought.tolist()
     price_energy_sold_list =price_energy_sold.tolist()
     baseline_price_list = baseline_price.tolist()
     baseline_price_no_solar_list = baseline_price_no_solar.tolist()
-
-
-    # format the data for the api
+    end = time.time()
+    my_time.append(end-start)
     api_output = {
         'predicted_data':predicted_df,
         'predicted_hourly_price':price_week,
@@ -360,41 +338,26 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
         'baseline_hourly_price':baseline_price_list,
         'baseline_price_no_solar':baseline_price_no_solar_list,
         'baseline_cost_no_solar':baseline_cost_no_solar,
-        'weather_code': weather_code,
-        # 'predicted_data_ts':(type(predicted_df), predicted_df.shape),
-        # 'predicted_hourly_price_ts':type(price_week),
-        # 'optimised_battery_storage_ts':(type(battery_store_list), len(battery_store_list)),
-        # 'optimised_energy_purchase_price_ts':(type(price_energy_bought_list), len(price_energy_bought_list)),
-        # 'optimised_energy_sold_price_ts':(type(price_energy_sold_list), len(price_energy_sold_list)),
-        # 'baseline_cost_ts':type(baseline_cost),
-        # 'baseline_hourly_price_ts':(type(baseline_price_list), len(baseline_price_list)),
-        # 'weather_code_ts': (type(weather_code))
+        'weather_code': weather_code
     }
-    return api_output
+    end = time.time()
+    my_time.append(end-start)
+    return api_output, my_time
 
 
 if __name__ == '__main__':
-    #battery_size = 10 # total size
-    #battery_charge = 5 # initial charge amount
-    #time_points = 3*24 # hours
 
+    run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
     start = time.time()
-    #run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
-    start = time.time()
-    api_output = run_full_model_api(battery_size, battery_charge, solar_size=solar_size, acorn = 'A')
-    #price_week, baseline_cost = run_full_model_unsaved()
-    #price_week, baseline_cost = run_full_model_saved()
+    api_output, my_time = run_full_model_api(battery_size, battery_charge, acorn = 'A')
     end = time.time()
 
     # print statements
     print(f'The model took {round((end - start),1)} seconds to run')
-    #print(api_output['weather_code'])
     print('Baseline cost no solar:')
     print(f"{round(api_output['baseline_cost_no_solar']/100,2)}")
     print('Baseline cost solar:')
     print(f"£{round(api_output['baseline_cost']/100,2)}")
     print('Cost our prediction:')
     print(f"£{round(api_output['predicted_hourly_price']/100,2)}")
-    #print(f'The week cost using our model is £{round(price_week/100,2)}')
-    #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-    #print(run_full_model_api(battery_size, battery_charge))
+    print(my_time)
