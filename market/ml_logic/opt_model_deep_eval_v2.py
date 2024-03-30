@@ -24,7 +24,7 @@ warnings.simplefilter('ignore')
 global battery_size, battery_charge, time_points
 
 
-def data_collect(d, acorn = 'A'):
+def data_collect(d,solar_size, acorn = 'A'):
     '''
     This function takes in the start date of interest
     and collects the predictions from the three other models
@@ -49,11 +49,10 @@ def data_collect(d, acorn = 'A'):
     gen = weekly_validation(d)
     #gen['date'] = gen['date'].apply(lambda x: x.replace(year = d.year))
     gen.set_index('date', inplace = True)
-    gen_actual = gen[['test']]/250
+    gen_actual = gen[['test']]/1000 * solar_size
     gen_actual.rename(columns={'test':'Generation_kwh'}, inplace = True)
-    gen_pred = gen[['predict']]/250
+    gen_pred = gen[['predict']]/1000 * solar_size
     gen_pred.rename(columns={'predict':'Generation_kwh'}, inplace = True)
-
     # Combine the data into an actual dataframe
     price_buy = (price_actual[['SalePrice_p/kwh']] * 2)
     price_buy = price_buy.rename(columns={'SalePrice_p/kwh':'PurchasePrice_p/kwh'})
@@ -182,18 +181,34 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
+def baseline_model_no_solar(data):
+    '''
+    A model which takes in the results of three seperate models:
+    Energy consumption, PV Energy Gen, Energy Price
+    and outputs a baseline profitability assuming no PV generation
+    '''
+    # Input data must be in the form:
+    # SalePrice_£/kwh	PurchasePrice_£/kwh	Generation_kwh	Consumption_kwh
+    df = np.array(data)
+    df = np.concatenate((df,np.zeros((time_points,1))),axis=1)
+    for i in range(time_points):
+        df[i,4] = df[i,3] * df[i,1]
+    baseline_price_no_solar = df[:,4]
+    baseline_cost_no_solar = np.sum(df[:,4])
+    return baseline_cost_no_solar
 
-def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
+
+def multiple_evaluate_full_model(battery_size, battery_charge,solar_size, acorn = 'A'):
     '''
     Function for running the evaluation function multiple times and saving the reults
     '''
-    d = datetime(2023,1,15,00,00,0)
+    d = datetime(2023,3,4,00,00,0)
     td = timedelta(days=3)
-    df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[]}, index = [])
+    df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[], 'act_baseline_cost_no_solar':[],'pred_baseline_cost_no_solar':[]}, index = [])
 
-    for i in range(90):
+    for i in range(3): # 90
         print(f'model {i} evaluation in progress...')
-        actual_df, predicted_df = data_collect(d)
+        actual_df, predicted_df = data_collect(d, solar_size)
         actual_df = actual_df.iloc[:time_points]
         predicted_df = predicted_df.iloc[:time_points]
         # Use actual data
@@ -203,8 +218,11 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
         # calculate baseline data
         actual_baseline_cost, baseline_price = baseline_model(actual_df)
         pred_baseline_cost, baseline_price = baseline_model(predicted_df)
+
+        act_baseline_cost_no_solar = baseline_model_no_solar(actual_df)
+        pred_baseline_cost_no_solar = baseline_model_no_solar(predicted_df)
         # append to dataframe
-        df_to_add = pd.DataFrame([[actual_price_week,pred_price_week,actual_baseline_cost,pred_baseline_cost]], columns = ['actual_price_week','pred_price_week','actual_baseline_cost','pred_baseline_cost'],index =[d])
+        df_to_add = pd.DataFrame([[actual_price_week,pred_price_week,actual_baseline_cost,pred_baseline_cost, act_baseline_cost_no_solar, pred_baseline_cost_no_solar]], columns = ['actual_price_week','pred_price_week','actual_baseline_cost','pred_baseline_cost', 'act_baseline_cost_no_solar','pred_baseline_cost_no_solar'],index =[d])
         df = pd.concat([df, df_to_add])
         d = d + td
         df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
@@ -244,6 +262,7 @@ if __name__ == '__main__':
     battery_size = 10 # total size
     battery_charge = 5 # initial charge amount
     time_points = 3*24 # hours
+    solar_size = 5
 
-    df = multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A')
+    df = multiple_evaluate_full_model(battery_size, battery_charge,solar_size, acorn = 'A')
     print(df)
