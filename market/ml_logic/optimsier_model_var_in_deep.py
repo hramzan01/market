@@ -28,7 +28,9 @@ warnings.simplefilter('ignore')
 
 global battery_size, battery_charge, time_points
 
-
+battery_size = 10 # total size
+battery_charge = 5 # initial charge amount
+time_points = 3*24 # hours
 
 def data_collect_save_models(d, acorn = 'A'):
     '''
@@ -156,7 +158,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':100000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':50000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -328,17 +330,23 @@ def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
     baseline_cost, baseline_price = baseline_model(predicted_df)
     baseline_price_no_solar, baseline_cost_no_solar = baseline_model_no_solar(predicted_df)
 
+    battery_store_list = battery_store.tolist()
+    price_energy_bought_list = price_energy_bought.tolist()
+    price_energy_sold_list =price_energy_sold.tolist()
+    baseline_price_list = baseline_price.tolist()
+    baseline_price_no_solar_list = baseline_price_no_solar.tolist()
+
 
     # format the data for the api
     api_output = {
         'predicted_data':predicted_df,
         'predicted_hourly_price':price_week,
-        'optimised_battery_storage':battery_store,
-        'optimised_energy_purchase_price':price_energy_bought,
-        'optimised_energy_sold_price':price_energy_sold,
+        'optimised_battery_storage':battery_store_list,
+        'optimised_energy_purchase_price':price_energy_bought_list,
+        'optimised_energy_sold_price':price_energy_sold_list,
         'baseline_cost':baseline_cost,
-        'baseline_hourly_price':baseline_price,
-        'baseline_price_no_solar':baseline_price_no_solar,
+        'baseline_hourly_price':baseline_price_list,
+        'baseline_price_no_solar':baseline_price_no_solar_list,
         'baseline_cost_no_solar':baseline_cost_no_solar,
         'weather_code': weather_code
     }
@@ -346,12 +354,12 @@ def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
 
 
 if __name__ == '__main__':
-    battery_size = 10 # total size
-    battery_charge = 5 # initial charge amount
-    time_points = 3*24 # hours
+    #battery_size = 10 # total size
+    #battery_charge = 5 # initial charge amount
+    #time_points = 3*24 # hours
 
     start = time.time()
-    run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
+    #run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
     start = time.time()
     api_output = run_full_model_api(battery_size, battery_charge, acorn = 'A')
     #price_week, baseline_cost = run_full_model_unsaved()
