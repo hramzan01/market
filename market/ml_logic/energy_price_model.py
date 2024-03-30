@@ -89,6 +89,7 @@ def create_train_test_set(file, d, previous_days=6*30, forecast_days = 7):
 
     # check if the full testing set exists
     if df_price['ds'].iloc[-1] <= end_date_dt:
+        d = d - timedelta(hours=1)
         train = df_price[(df_price['ds']>start_date) & (df_price['ds']<= d)]
         test = 'Date not applicable for test set'
         return train, test
@@ -152,7 +153,9 @@ def energy_model_run(date, forecast_days = 7):
     download_file(file, save_path)
 
     # Run the model
-    train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
+    train, test = create_train_test_set(file, d=date, previous_days=36*30, forecast_days = forecast_days)
+    # Line removed for model checking AEOXLEY
+    #train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
     model, forecast_y_df = ml_model(train, forecast_days=forecast_days, seasonality_mode = 'multiplicative', year_seasonality_mode=4, freq='h')
     print('Model finished')
     #return test, forecast_y_df[['ds', 'yhat']]
@@ -172,9 +175,9 @@ def price_save_model(date, forecast_days = 7):
 
     # download the latest file
     download_file(file, save_path)
-
+    date = date.replace(hour=0, minute=0, second=0)
     # preprocess the data
-    train, test = create_train_test_set(file, d=date, previous_days=6*30, forecast_days = forecast_days)
+    train, test = create_train_test_set(file, d=date, previous_days=36*30, forecast_days = forecast_days)
 
     # train the model
     model = Prophet(seasonality_mode='multiplicative', yearly_seasonality=4, interval_width=0.95)
@@ -218,3 +221,4 @@ if __name__ == '__main__':
     #test, forecast_y_df = energy_model_run(date, forecast_days = 7)
     price_save_model(date, forecast_days = 7)
     y_pred = price_load_model(date, forecast_days = 7)
+    print(y_pred)
