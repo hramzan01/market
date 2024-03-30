@@ -141,14 +141,14 @@ def optimiser_model(data, battery_charge, battery_size):
             x0[i] = 0
             x1[i] = 0
     # Set bounds
-    # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
+    # lower bound for x0 is 0, upper bound is 3 (assumption set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
     ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
     bounds = Bounds(lb=lb, ub=ub)
     # concatanate x0 and x1 for the model
     x_input = np.concatenate((x0,x1),axis=0)
-
+    print('minimiser started')
     # Model Run: minimisation. maxiter = 100000.
     res = minimize(
         profit,
@@ -159,6 +159,7 @@ def optimiser_model(data, battery_charge, battery_size):
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
+    print('minimiser finished')
 
     # ste up function to run the optimal model
     def battery_storage(x_input):
@@ -238,7 +239,7 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
     '''
     Function for running the evaluation function multiple times and saving the reults
     '''
-    d = datetime(2023,10,9,00,00,0)
+    d = datetime(2023,9,10,00,00,0)
     td = timedelta(days=7)
     df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[]}, index = [])
 
@@ -321,7 +322,8 @@ def optimiser_var_model(data, battery_charge, battery_size, model):
             x0[i] = df[i,3] - df[i,2]
             x1[i] = 0
         else:
-            df[i,4] = 0
+            x0[i] = 0
+            x1[i] = 0
     # Set bounds
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
@@ -338,7 +340,7 @@ def optimiser_var_model(data, battery_charge, battery_size, model):
         bounds = bounds,
         method=model,
         #options={'ftol': 0.01, 'maxiter':100000, 'disp': True}
-        options={'xatol': 1e-16, 'maxiter':200000, 'disp': True}
+        options={'xatol': 1e-16, 'maxiter':100000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
