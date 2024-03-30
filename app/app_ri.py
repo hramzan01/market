@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 from dateutil import parser
 import matplotlib.pylab as plt
-
+import time
 # import datetime
 import requests
 
@@ -137,8 +137,8 @@ with st.form(key='params_for_api'):
         'battery_charge': Battery_Charge
     }
 
-    api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
-    # api_url = 'http://127.0.0.1:8000/predict'
+    # api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
+    api_url = 'http://127.0.0.1:8000/predict'
     # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
@@ -153,6 +153,7 @@ with st.form(key='params_for_api'):
     #     st.write(prediction)
 
     if st.form_submit_button('Submit'):
+        start_time = time.time()
         response = requests.get(api_url, params=params)
         data = response.json()
 
@@ -165,6 +166,7 @@ with st.form(key='params_for_api'):
         res_opt_buyprice = data['res_opt_buyprice']['0']
         res_opt_sellprice = data['res_opt_sellprice']['0']
         res_opt_baseprice = data['res_opt_baseprice']['0']
+        res_weather_code = data['res_weather_code']
 
         # saleprice = pd.DataFrame(data['prediction_data']['SalePrice_p/kwh'])
         # buyprice = pd.DataFrame(data['prediction_data']['PurchasePrice_p/kwh'])
@@ -226,6 +228,16 @@ with st.form(key='params_for_api'):
         plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         plt.legend()
         st.pyplot(fig_priceopt)
+
+        fig_weathercode = plt.figure();
+        plt.plot(dates, res_weather_code,label = 'Weather_code');
+        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        plt.legend()
+        st.pyplot(fig_weathercode)
+
+        end_time = time.time()
+        time_diff = end_time - start_time
+        st.write(f"Time taken: {time_diff:.2f} seconds")
 
 
 
