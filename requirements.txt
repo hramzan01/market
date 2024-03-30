@@ -21,3 +21,4 @@ pytz
 uvicorn
 streamlit
 plotly
+market.ml_logic.optimsier_model_var_in_deep
