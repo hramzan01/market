@@ -297,6 +297,15 @@ def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
     # Compare to baseline
     baseline_cost, baseline_price = baseline_model(predicted_df)
+    # Compare to baseline
+    baseline_cost, baseline_price = baseline_model(predicted_df)
+    baseline_price_no_solar, baseline_cost_no_solar = baseline_model_no_solar(predicted_df)
+
+    battery_store_list = battery_store.tolist()
+    price_energy_bought_list = price_energy_bought.tolist()
+    price_energy_sold_list =price_energy_sold.tolist()
+    baseline_price_list = baseline_price.tolist()
+    baseline_price_no_solar_list = baseline_price_no_solar.tolist()
     # format the data for the api
     api_output = {
         'predicted_data':predicted_df,
