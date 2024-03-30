@@ -1,21 +1,6 @@
-
-
-import streamlit as st
 from streamlit.components.v1 import html
-import pandas as pd
-import streamlit as st
-import plotly.graph_objects as go
 from datetime import datetime
-import time
-
-
 import matplotlib.pylab as plt
-
-# import datetime
-import requests
-
-from PIL import Image
-import os
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -24,8 +9,8 @@ import plotly.express as px
 from PIL import Image
 import time
 import os
-st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
+st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
 # Background
 st.markdown(
@@ -78,17 +63,19 @@ with st.container():
     st.markdown('')  # Empty markdown line for spacing
 
 
-
 def page_dashboard():
+    
     battery_size = 5
     battery_charge = 3
     postcode = 'E1 5DY'
     name = 'Haaris'
+    
     # Return Lat & Lon from postcode
     base_url = 'https://api.postcodes.io/postcodes'
     response = requests.get(f'{base_url}/{postcode}').json()
     lat = response['result']['latitude']
     lon = response['result']['longitude']
+    
     # Output: User visuals (this is user dashboard)
     with st.form(key='params_for_api'):
         # Test_API_predict
@@ -99,7 +86,8 @@ def page_dashboard():
         }
         api_url = 'http://127.0.0.1:8000/predict'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
-
+        complete_url
+        
         # Generate Dashboard when submit is triggered
         if st.form_submit_button('CHARGE ⚡️', use_container_width=True):
            
@@ -113,9 +101,11 @@ def page_dashboard():
             # my_bar.empty()
 
             with st.spinner('charging up your dashboard...'):
+                
                 # Make API call
                 response = requests.get(api_url, params=params)
                 data = response.json()
+                weather = data['res_weather_code']
                 saleprice = data['prediction_data']['SalePrice_p/kwh']
                 buyprice = data['prediction_data']['PurchasePrice_p/kwh']
                 power_gen = data['prediction_data']['Generation_kwh']
@@ -133,6 +123,7 @@ def page_dashboard():
                 x_spopt, y_spopt = zip(*res_opt_sellprice.items())
                 x_basep, y_basep = zip(*res_opt_baseprice.items())
                 dates = pd.to_datetime(x_buy)
+                
                 # VISUALS
                 # plotly map
                 @st.cache_data
@@ -166,8 +157,7 @@ def page_dashboard():
                         height=400
                     )
                     return fig
-                st.write(london_map(lat, lon))
-                
+                st.write(london_map(lat, lon))                
                 
                 # Header
                 st.subheader(f"{name}'s Energy Hub")
@@ -177,12 +167,12 @@ def page_dashboard():
                 # Tracker cards
                 track1, track2, track3 = st.columns(3)
                 track1.metric("money saved", "£437.8", "£1.25")
-                track2.metric("energy saved", "⌁121.10", "0.46%")
+                track2.metric("energy saved", "⌁121.10kw", "0.46%")
                 track3.metric("energy sold", "£46,583.91", "+4.87%")
-                
                 
                 # Split the remaining space into three columns
                 col0, col1, col2 = st.columns(3)
+                
                 # Display images
                 image1 = Image.open('app/assets/money.png').resize((115, 100))
                 image2 = Image.open('app/assets/energy.png').resize((100, 100))
@@ -194,26 +184,28 @@ def page_dashboard():
                 with col2:
                     st.image(image3, use_column_width=False)
                 st.markdown('')  # Empty markdown line for spacing
+                
                 # Split the remaining space into three columns
                 col3, col4, col5 = st.columns(3)
+                
                 # First column: Buy vs Sell Price
                 with col3:
                     # Buy vs Sell Price
                     fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
-                    fig.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)')
+                    fig.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
                     fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
 
                     st.plotly_chart(fig)
                 with col4:
                     # Power gen vs power con
                     fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': 'Power'}, title='Power Generation vs Consumption')
-                    fig_power.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)')
+                    fig_power.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
 
                     st.plotly_chart(fig_power)
                 with col5:
                     # Battery Output
                     fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
-                    fig_battopt.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)')
+                    fig_battopt.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
                     fig_battopt.update_layout(width=400)
 
                     st.plotly_chart(fig_battopt)
@@ -221,10 +213,12 @@ def page_dashboard():
                 # Get definitiion for weather WMO codes
                 wmo_url = 'https://gist.githubusercontent.com/stellasphere/9490c195ed2b53c707087c8c2db4ec0c/raw/76b0cb0ef0bfd8a2ec988aa54e30ecd1b483495d/descriptions.json'
                 wmo_description = requests.get(wmo_url).json()
+                
                 # Forecast header
                 st.subheader('7 Day Energy Forecast')
                 st.markdown('')  # Empty markdown line for spacing
                 st.markdown('')  # Empty markdown line for spacing
+                
                 # get images for weather
                 image1 = wmo_description['2']['day']['image']
                 image2 = wmo_description['3']['day']['image']
@@ -233,6 +227,7 @@ def page_dashboard():
                 image5 = wmo_description['53']['day']['image']
                 image6 = wmo_description['45']['day']['image']
                 image7 = wmo_description['3']['day']['image']
+                
                 # Split the columns for 7 images for 7 days of week
                 mon, tue, wed, thu, fri, sat, sun = st.columns(7)
                 mon.image(image1)
