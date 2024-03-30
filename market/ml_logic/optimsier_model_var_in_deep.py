@@ -35,10 +35,10 @@ def data_collect_save_models(d, acorn = 'A'):
     This function runs the models and saves the data for a given date
     Where d is today's date
     '''
-    d=d.replace(minute = 0, second = 0)
+    d=d.replace(hour = 0, minute = 0, second = 0)
     cons_save_model(X ='A', date=d)
     price_save_model(date = d, forecast_days = 7)
-    save_gen_model()
+    #save_gen_model()
 
 
 def data_collect_prediction(d_input, acorn = 'A'):
@@ -49,16 +49,14 @@ def data_collect_prediction(d_input, acorn = 'A'):
     The function outputsthe predicted data
     '''
     # Format input date to be an hourly date
-    d=d_input.replace(minute = 0, second = 0)
+    d=d_input.replace(hour = 0, minute = 0, second = 0)
 
     # Run the price model
     price_pred = price_load_model(d, forecast_days = 7)
     price_pred.rename(columns={'yhat':'SalePrice_p/kwh'}, inplace= True)
-
     # Run the consumption model
     cons_prediction = cons_load_model(d, forecasted_days = 7)
     cons_prediction.rename(columns={'yhat':'Consumption_kwh'}, inplace= True)
-
     # Run the Generation model
     gen = get_prediction()
     gen['ds']=price_pred.reset_index()['ds']
@@ -129,7 +127,7 @@ def optimiser_model(data, battery_charge, battery_size):
     x0 = np.array(df[:,3]) # initial purchase amount
     x1 =  np.array(df[:,2]) # initial sale amount
     # Improvement on X0 and X1 initial guesses
-    for i in range(168):
+    for i in range(time_points):
         # if generation is more than consumption
         if df[i,2] > df[i,3]:
            x0[i] = 0
@@ -204,8 +202,8 @@ def baseline_model(data):
 
     print('Basline model running')
     df = np.array(data)
-    df = np.concatenate((df,np.zeros((168,1))),axis=1)
-    for i in range(168):
+    df = np.concatenate((df,np.zeros((time_points,1))),axis=1)
+    for i in range(time_points):
         # if generation is more than consumption
         if df[i,2] > df[i,3]:
             #profit is from sales
@@ -350,8 +348,10 @@ def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
 if __name__ == '__main__':
     battery_size = 10 # total size
     battery_charge = 5 # initial charge amount
-    time_points = 7*24 # hours
+    time_points = 3*24 # hours
 
+    start = time.time()
+    #run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
     start = time.time()
     api_output = run_full_model_api(battery_size, battery_charge, acorn = 'A')
     #price_week, baseline_cost = run_full_model_unsaved()
@@ -360,9 +360,9 @@ if __name__ == '__main__':
 
     # print statements
     print(f'The model took {end - start} seconds to run')
-    print(api_output['weather_code'])
-    print(api_output['baseline_cost_no_solar'])
-    print(api_output['baseline_cost'])
-    print(api_output['predicted_hourly_price'])
+    #print(api_output['weather_code'])
+    print(round(api_output['baseline_cost_no_solar']/100,2))
+    print(round(api_output['baseline_cost']/100,2))
+    print(round(api_output['predicted_hourly_price']/100,2))
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
