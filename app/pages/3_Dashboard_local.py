@@ -192,23 +192,46 @@ def page_dashboard():
                 with col3:
                     # Buy vs Sell Price
                     fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
-                    fig.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                    fig.update_layout(
+                        plot_bgcolor='rgba(0, 0, 0, 0)',
+                        paper_bgcolor='rgba(0, 0, 0, 0)',
+                        width=600,
+                        height=400,
+                        showlegend=False  # Hide legend
+                    )
                     fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
-
+                    fig.add_scatter(x=dates, y=y_sale, mode='lines', name='Sell Price')
+                    fig.update_layout(width=400)
                     st.plotly_chart(fig)
+
                 with col4:
                     # Power gen vs power con
-                    fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': 'Power'}, title='Power Generation vs Consumption')
-                    fig_power.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
-
+                    fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='Power Generation vs Consumption')
+                    fig_power.update_layout(
+                        plot_bgcolor='rgba(0, 0, 0, 0)',
+                        paper_bgcolor='rgba(0, 0, 0, 0)',
+                        width=600,
+                        height=400,
+                        showlegend=False  # Hide legend
+                    )
+                    fig_power.add_scatter(x=dates, y=y_gen, mode='lines', name='generated')
+                    fig_power.add_scatter(x=dates, y=y_cons, mode='lines', name='consumed')
+                    fig_power.update_layout(width=400)
                     st.plotly_chart(fig_power)
+
                 with col5:
                     # Battery Output
                     fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
-                    fig_battopt.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                    fig_battopt.update_layout(
+                        plot_bgcolor='rgba(0, 0, 0, 0)',
+                        paper_bgcolor='rgba(0, 0, 0, 0)',
+                        width=600,
+                        height=400,
+                        showlegend=False  # Hide legend
+                    )
                     fig_battopt.update_layout(width=400)
-
                     st.plotly_chart(fig_battopt)
+
                     
                 # Get definitiion for weather WMO codes
                 wmo_url = 'https://gist.githubusercontent.com/stellasphere/9490c195ed2b53c707087c8c2db4ec0c/raw/76b0cb0ef0bfd8a2ec988aa54e30ecd1b483495d/descriptions.json'
@@ -231,25 +254,25 @@ def page_dashboard():
                 # Split the columns for 7 images for 7 days of week
                 mon, tue, wed, thu, fri, sat, sun = st.columns(7)
                 mon.image(image1)
-                mon.text('DAY 1')
+                mon.text('  Saturday')
                 tue.image(image2)
-                tue.text('DAY 2')
+                tue.text('  Sunday')
                 wed.image(image3)
-                wed.text('DAY 3')
+                wed.text('  Monday')
                 thu.image(image4)
-                thu.text('DAY 4')
+                thu.text('  Tuesday')
                 fri.image(image5)
-                fri.text('DAY 5')
+                fri.text('  Wednesday')
                 sat.image(image6)
-                sat.text('DAY 6')
+                sat.text('  Thursday')
                 sun.image(image7)
-                sun.text('DAY 7')
+                sun.text('  Friday')
                 
                 # Main optimised prohet graph
-                fig_final = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
-                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)')
-                fig_final.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
-
+                # Battery Output
+                fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                fig_final.update_layout(width=400)
                 fig_final.update_layout(width=1280)
                 st.plotly_chart(fig_final)
                 
@@ -257,11 +280,9 @@ def page_dashboard():
                 st.markdown("---")
                 st.write('Model Performance Metrics')
                 
-                eval1, eval2, eval3 = st.columns(3)
-                eval1.metric("money saved", "$437.8", "-$1.25")
-                eval2.metric("energy saved", "$121.10", "0.46%")
-                eval3.metric("energy sold", "$46,583.91", "+4.87%")
-                
+                st.success('Optimisation Model Accuracy: 75.6%')
+                st.balloons()
                 st.markdown("---")
+        
 
 page_dashboard()
