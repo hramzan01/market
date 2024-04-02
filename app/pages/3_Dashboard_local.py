@@ -67,8 +67,8 @@ def page_dashboard():
     
     battery_size = 5
     battery_charge = 3
-    postcode = 'E1 5DY'
-    name = 'Haaris'
+    postcode = 'E2 8DY'
+    name = 'Le Wagon LDN'
     
     # Return Lat & Lon from postcode
     base_url = 'https://api.postcodes.io/postcodes'
@@ -86,7 +86,6 @@ def page_dashboard():
         }
         api_url = 'http://127.0.0.1:8000/predict'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
-        complete_url
         
         # Generate Dashboard when submit is triggered
         if st.form_submit_button('CHARGE ⚡️', use_container_width=True):
@@ -134,8 +133,9 @@ def page_dashboard():
                         lon=[lon],
                         mode='markers',
                         marker=go.scattermapbox.Marker(
-                            size=13,
-                            color='orange'
+                            size=30,
+                            opacity=0.5,
+                            color='orange',
                         ),
                         text=['London']
                     ))
@@ -161,7 +161,7 @@ def page_dashboard():
                 
                 # Header
                 st.subheader(f"{name}'s Energy Hub")
-                st.markdown('')  # Empty markdown line for spacing
+                st.divider()
                 st.markdown('')  # Empty markdown line for spacing
                 
                 # Tracker cards
@@ -169,24 +169,28 @@ def page_dashboard():
                 track1.metric("money saved", "£437.8", "£1.25")
                 track2.metric("energy saved", "⌁121.10kw", "0.46%")
                 track3.metric("energy sold", "£46,583.91", "+4.87%")
+                st.markdown('')  # Empty markdown line for spacing
                 
                 # Split the remaining space into three columns
                 col0, col1, col2 = st.columns(3)
                 
                 # Display images
-                image1 = Image.open('app/assets/money.png').resize((115, 100))
-                image2 = Image.open('app/assets/energy.png').resize((100, 100))
-                image3 = Image.open('app/assets/battery.png').resize((55, 100))
+                st.markdown('')  # Empty markdown line for spacing
+                st.markdown('')  # Empty markdown line for spacing
+                
+                image1 = Image.open('app/assets/money_y.png').resize((100, 100))
+                image2 = Image.open('app/assets/energy_y.png').resize((100, 100))
+                image3 = Image.open('app/assets/battery_y.png').resize((100, 100))
                 with col0:
                     st.image(image1, use_column_width=False)
                 with col1:
                     st.image(image2, use_column_width=False)
                 with col2:
                     st.image(image3, use_column_width=False)
-                st.markdown('')  # Empty markdown line for spacing
                 
                 # Split the remaining space into three columns
                 col3, col4, col5 = st.columns(3)
+                st.divider()
                 
                 # First column: Buy vs Sell Price
                 with col3:
@@ -269,6 +273,7 @@ def page_dashboard():
                 sun.text('  Friday')
                 
                 # Main optimised prohet graph
+                st.divider()
                 # Battery Output
                 fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
                 fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
