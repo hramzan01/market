@@ -148,8 +148,8 @@ with st.form(key='params_for_api'):
     # api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'https://marketpricelightver2-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'https://marketpricelightver3-d2w7qz766q-ew.a.run.app/predict'
-    api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict'
-    # api_url = 'http://127.0.0.1:8000/predict'
+    # api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict' # (latest)
+    api_url = 'http://127.0.0.1:8000/predict'
     # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
@@ -158,20 +158,11 @@ with st.form(key='params_for_api'):
 
     st.write(f'complete url is {complete_url}')
 
-    # if st.form_submit_button('Submit'):
-    #     response = requests.get(api_url, params=params)
-    #     prediction = response.json()
-    #     st.write(prediction)
 
     if st.form_submit_button('Submit'):
         start_time = time.time()
         response = requests.get(api_url, params=params)
         data = response.json()
-
-        # saleprice = data['prediction_data']['SalePrice_p/kwh']
-        # buyprice = data['prediction_data']['PurchasePrice_p/kwh']
-        # power_gen = data['prediction_data']['Generation_kwh']
-        # power_cons = data['prediction_data']['Consumption_kwh']
 
         saleprice = data['prediction_saleprice']
         buyprice = data['prediction_purchaseprice']
@@ -184,15 +175,9 @@ with st.form(key='params_for_api'):
         res_opt_baseprice = data['res_opt_baseprice']['0']
         res_weather_code = data['res_weather_code']
 
-        # saleprice = pd.DataFrame(data['prediction_data']['SalePrice_p/kwh'])
-        # buyprice = pd.DataFrame(data['prediction_data']['PurchasePrice_p/kwh'])
-        # power_gen = pd.DataFrame(data['prediction_data']['Generation_kwh'])
-        # power_cons = pd.DataFrame(data['prediction_data']['Consumption_kwh'])
-
-        # st.write(res_opt_batt.head())
-        # st.write(buyprice.df)
-        # st.write(power_gen.df)
-        # st.write(power_cons.df)
+        res_baseline_price_no_solar = data['res_baseline_price_no_solar']['0']
+        res_delta_profit = data['res_delta_profit']['0']
+        res_delta_buy_sell_price = data['res_delta_buy_sell_price']['0']
 
         x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
         x_buy, y_buy = zip(*buyprice.items())
@@ -204,13 +189,17 @@ with st.form(key='params_for_api'):
         x_spopt, y_spopt = zip(*res_opt_sellprice.items())
         x_basep, y_basep = zip(*res_opt_baseprice.items())
 
+        x_p_nosol, y_p_nosol = zip(*res_baseline_price_no_solar.items())
+        x_profit_delta, y_profit_delta = zip(*res_delta_profit.items())
+        x_buysell_delta, y_buysell_delta = zip(*res_delta_buy_sell_price.items())
+
         dates = pd.to_datetime(x_buy)
 
         fig = plt.figure();
         plt.plot(dates, y_sale,label = 'sell_price');
         plt.plot(dates, y_buy, label = 'buy price');
         plt.legend()
-        start_date = (x_buy[0]) #.floor('D')
+        start_date = (x_buy[0])
         start_datetimeobj = parser.isoparse(start_date)
         start_datetime = start_datetimeobj.strftime('%Y-%m-%d %H:%M:%S')
         st.code(start_datetimeobj)
@@ -241,9 +230,17 @@ with st.form(key='params_for_api'):
         plt.plot(dates, y_bpopt,label = 'Buy_Price_Opt');
         plt.plot(dates, y_spopt, label = 'Sell_Price_Opt');
         plt.plot(dates, y_basep, label = 'Base_Price');
+        plt.plot(dates, y_buysell_delta, label = 'Delta_Buy_Sell');
         plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
         plt.legend()
         st.pyplot(fig_priceopt)
+
+        fig_savings = plt.figure();
+        plt.plot(dates, y_profit_delta,label = 'Price_delta');
+        plt.plot(dates, y_p_nosol,label = 'Price_nosol');
+        plt.xticks(pd.date_range(start=start_datetimeobj, end=end_datetimeobj, freq='2D'))
+        plt.legend()
+        st.pyplot(fig_savings)
 
         fig_weathercode = plt.figure();
         plt.plot(dates, res_weather_code,label = 'Weather_code');
@@ -254,8 +251,6 @@ with st.form(key='params_for_api'):
         end_time = time.time()
         time_diff = end_time - start_time
         st.write(f"Time taken: {time_diff:.2f} seconds")
-
-
 
 
 ########
