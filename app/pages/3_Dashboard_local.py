@@ -159,6 +159,15 @@ def page_dashboard():
                     return fig
                 st.write(london_map(lat, lon))                
                 
+                # Main optimised prohet graph
+                st.divider()
+                # Battery Output
+                fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                fig_final.update_layout(width=400)
+                fig_final.update_layout(width=1280)
+                st.plotly_chart(fig_final)
+                
                 # Header
                 st.subheader(f"{name}'s Energy Hub")
                 st.divider()
@@ -166,9 +175,9 @@ def page_dashboard():
                 
                 # Tracker cards
                 track1, track2, track3 = st.columns(3)
-                track1.metric("money saved", "£437.8", "£1.25")
-                track2.metric("energy saved", "⌁121.10kw", "0.46%")
-                track3.metric("energy sold", "£46,583.91", "+4.87%")
+                track1.metric("money saved", "£437.8", "£1.25 YTD")
+                track2.metric("energy saved", "⌁121.10kw", "0.46% YTD")
+                track3.metric("energy sold", "£46,583.91", "+4.87% YTD")
                 st.markdown('')  # Empty markdown line for spacing
                 
                 # Split the remaining space into three columns
@@ -193,9 +202,11 @@ def page_dashboard():
                 st.divider()
                 
                 # First column: Buy vs Sell Price
+                # Define a common color for all lines
+                color = 'orange'
                 with col3:
                     # Buy vs Sell Price
-                    fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='Buy vs Sell Price')
+                    fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='BUY X SELL(£)')
                     fig.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -208,9 +219,10 @@ def page_dashboard():
                     fig.update_layout(width=400)
                     st.plotly_chart(fig)
 
+
                 with col4:
                     # Power gen vs power con
-                    fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='Power Generation vs Consumption')
+                    fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='GEN X USE')
                     fig_power.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -225,7 +237,7 @@ def page_dashboard():
 
                 with col5:
                     # Battery Output
-                    fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+                    fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='BATTERY CHARGE')
                     fig_battopt.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -272,20 +284,17 @@ def page_dashboard():
                 sun.image(image7)
                 sun.text('  Friday')
                 
-                # Main optimised prohet graph
-                st.divider()
-                # Battery Output
-                fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
-                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
-                fig_final.update_layout(width=400)
-                fig_final.update_layout(width=1280)
-                st.plotly_chart(fig_final)
                 
                 # Footer
-                st.markdown("---")
-                st.write('Model Performance Metrics')
-                
-                st.success('Optimisation Model Accuracy: 75.6%')
+                # Tracker cards
+                st.divider()
+                st.subheader('Model Performance')
+
+                foot1, foot2, foot3 = st.columns(3)
+                foot1.metric("Predicted Annual Savings", "£230")
+                foot2.metric("Mean Average Error", "£0.64")
+                foot3.metric("R^2:", "0.92")
+                st.markdown('')  # Empty markdown line for spacing
                 st.balloons()
                 st.markdown("---")
         
