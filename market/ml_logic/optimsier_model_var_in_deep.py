@@ -348,6 +348,11 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
     baseline_price_list = baseline_price.tolist()
     baseline_price_no_solar_list = baseline_price_no_solar.tolist()
 
+    delta_profit = baseline_price_no_solar - price_energy_bought
+    delta_buy_sell_price = price_energy_bought - price_energy_sold
+
+    delta_profit_list = delta_profit.tolist()
+    delta_buy_sell_price_list = delta_buy_sell_price.tolist()
 
     # format the data for the api
     api_output = {
@@ -361,6 +366,8 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
         'baseline_price_no_solar':baseline_price_no_solar_list,
         'baseline_cost_no_solar':baseline_cost_no_solar,
         'weather_code': weather_code,
+        'delta_profit': delta_profit_list,
+        'delta_buy_sell_price': delta_buy_sell_price_list
         # 'predicted_data_ts':(type(predicted_df), predicted_df.shape),
         # 'predicted_hourly_price_ts':type(price_week),
         # 'optimised_battery_storage_ts':(type(battery_store_list), len(battery_store_list)),
