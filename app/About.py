@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
-
+from streamlit_player import st_player
 
 import matplotlib.pylab as plt
 
@@ -54,6 +54,16 @@ st.markdown(
             overflow: hidden; /* This is important to ensure the border radius is applied properly */
         }
     </style>
+    """
+    """
+    <style>
+        .vp-center {
+            width: 80%;
+            margin: 0px 0px 0px 0px;
+            background-color: #ffffff;
+            opacity: .4;
+        }
+    </style>
     """,
     unsafe_allow_html=True
 )
@@ -71,9 +81,13 @@ with st.container():
     st.markdown('')  # Empty markdown line for spacing
 
 
-
 def page_home():
-    st.header('What is Market', divider='grey')
+    st.markdown("""<center><iframe src="https://player.vimeo.com/video/929080587?h=deb89b82de&autoplay=1" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></center>""", unsafe_allow_html=True)
+    st.markdown('')
+    st.write("""MARKET is a trading platform offering users investment opportunities in collective ownership of solar farms. ☀️""")
+
+    st.write("""By leveraging weather forecasts and solar panel analytics, it delivers tailored recommendations for buying, holding, or selling energy generated from within your community""")
+
     st.subheader("""Empowerment: 💪""", anchor='center')
     st.write("""
     Empower users to participate in renewable energy ownership, promoting sustainability and community engagement.
