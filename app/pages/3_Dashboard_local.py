@@ -154,7 +154,6 @@ def page_dashboard():
                         mode='markers',
                         marker=go.scattermapbox.Marker(
                             size=30,
-                            opacity=0.5,
                             color='orange',
                         ),
                         text=['London']
@@ -295,37 +294,54 @@ def page_dashboard():
                 weekly_forecast = {}
                 for index, day in enumerate(daily_modes):
                     image = wmo_description[f'{day}']['day']['image']
-                    weekly_forecast[index] = image
+                    description = wmo_description[f'{day}']['day']['description']
+                    weekly_forecast[index] = []
+                    weekly_forecast[index].append(image)
+                    weekly_forecast[index].append(description)
                 
                 # Split the columns for 7 images for 7 days of week
                 mon, tue, wed, thu, fri, sat, sun = st.columns(7)
-                mon.image(weekly_forecast[0])
-                mon.text('DAY 01')
-                tue.image(weekly_forecast[1])
-                tue.text('DAY 02')
-                wed.image(weekly_forecast[2])
-                wed.text('DAY 03')
-                thu.image(weekly_forecast[3])
-                thu.text('DAY 04')
-                fri.image(weekly_forecast[4])
-                fri.text('DAY 05')
-                sat.image(weekly_forecast[5])
-                sat.text('DAY 06')
-                sun.image(weekly_forecast[6])
-                sun.text('DAY 07')
+                
+                mon.text('⌁ DAY 01')
+                mon.image(weekly_forecast[0][0])
+                mon.text(weekly_forecast[0][1])
+                
+                tue.text('⌁ DAY 02')
+                tue.image(weekly_forecast[1][0])
+                tue.text(weekly_forecast[1][1])
+                
+                wed.text('⌁ DAY 03')
+                wed.image(weekly_forecast[2][0])
+                wed.text(weekly_forecast[2][1])
+                
+                thu.text('⌁ DAY 04')
+                thu.image(weekly_forecast[3][0])
+                thu.text(weekly_forecast[3][1])
+                
+                fri.text('⌁ DAY 05')
+                fri.image(weekly_forecast[4][0])
+                fri.text(weekly_forecast[4][1])
+                
+                sat.text('⌁ DAY 06')
+                sat.image(weekly_forecast[5][0])
+                sat.text(weekly_forecast[5][1])
+                
+                sun.text('⌁ DAY 07')
+                sun.image(weekly_forecast[6][0])
+                sun.text(weekly_forecast[6][1])
                 
                 
                 # FOOTER
                 # Tracker cards
                 st.divider()
                 st.subheader('Model Performance')
+                st.markdown('')  # Empty markdown line for spacing
 
                 foot1, foot2, foot3 = st.columns(3)
                 foot1.metric("Predicted Annual Savings", "£230")
                 foot2.metric("Mean Average Error", "£0.64")
                 foot3.metric("R^2:", "0.92")
                 st.markdown('')  # Empty markdown line for spacing
-                st.markdown("---")
                 
                 # lottie_url = 'https://assets5.lottiefiles.com/packages/lf20_V9t630.json'
                 # st_lottie(lottie_url, key="user", height=100)
