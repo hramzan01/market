@@ -130,7 +130,7 @@ def page_profileV2():
     col2.text_input("Username", "", key="name")
     House_type = ["Bungalow","Terrace house", "Detached house", "Flat", "Semi-detached house"]
     #selected_date = st.date_input('Select a date', datetime.today())
-    col2.selectbox("Select an option", House_type, key="house")
+    col2.selectbox("Choose your house type", House_type, key="house")
     col3, col4= st.columns([1,3])
     try:
         image = Image.open(f'app/assets/{st.session_state.Bat_type}.png').resize((100, 100))
