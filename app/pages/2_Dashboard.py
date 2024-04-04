@@ -189,41 +189,6 @@ def page_dashboard():
                 #fig_final.update_layout(width=1280)
                 #st.plotly_chart(fig_final)
 
-                #attempt at new graph
-
-                # convert model price dictionary into numpy array and cumulative sum
-                result = data['res_delta_buy_sell_price']['0'].items()
-                graph_data = list(result)
-                model = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
-                # convert res_baseline_price_no_solar:  price dictionary into numpy array and cumulative sum
-                result = data['res_baseline_price_no_solar']['0'].items()
-                graph_data = list(result)
-                baseline_no_solar = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
-                # convert res_opt_baseprice:  price dictionary into numpy array and cumulative sum
-                result = data['res_opt_baseprice']['0'].items()
-                graph_data = list(result)
-                baseline = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
-                # Set up date range - will need to be imported from the streamlit
-                today = date.today()
-                first_date = today
-                last_date = today + timedelta(days=7)
-                date_range = pd.date_range(start = first_date, end=last_date, freq = 'h')
-                date_range = date_range[:168]
-                import matplotlib.pyplot as plt
-                #plt.plot(date_range, model, label='Optimised Price')
-                #plt.plot(date_range, baseline, label = 'Unoptimised Price')
-                #plt.plot(date_range, baseline_no_solar, label = 'Price No Solar')
-                #plt.ylabel('Weekly Cost (£)')
-                #plt.legend()
-
-                # Battery Output
-                df = pd.DataFrame({'date': date_range ,'Solar plus Market': model, 'Solar': baseline, 'Baseline': baseline_no_solar})
-                #fig_final = px.line(x=date_range, y=[model, baseline, baseline_no_solar], labels={'x': 'Date', 'y': 'Cumulative Cost', 'wide_variable_0': 'Solar plus Market', 'wide_variable_1': 'Solar', 'wide_variable_2': 'Baseline'}, title='Total Savings')
-                fig_final = px.line(df, x='date', y=['Solar plus Market', 'Solar', 'Baseline'], labels={'x': 'Date', 'y': 'Cumulative Cost'}, title='Total Savings')
-                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
-                fig_final.update_layout(width=400)
-                fig_final.update_layout(width=1280)
-                st.plotly_chart(fig_final)
 
                 # Header
                 st.subheader(f"{name}'s Energy Hub")
@@ -232,9 +197,9 @@ def page_dashboard():
 
                 # Tracker cards
                 track1, track2, track3 = st.columns(3)
-                track1.metric("money saved", "£437.8", "£1.25 YTD")
-                track2.metric("energy saved", "⌁121.10kw", "0.46% YTD")
-                track3.metric("energy sold", "£46,583.91", "+4.87% YTD")
+                track1.metric("money saved YTD", "£96.20", "£5.25 vs 2023")
+                track2.metric("energy saved YTD", "⌁568kWh", "0.46% vs 2023")
+                track3.metric("energy sold YTD", "⌁451kWh", "+4.87% vs 2023")
                 st.markdown('')  # Empty markdown line for spacing
 
                 # Split the remaining space into three columns
@@ -253,7 +218,41 @@ def page_dashboard():
                     st.image(image2, use_column_width=False)
                 with col2:
                     st.image(image3, use_column_width=False)
+                #attempt at new graph
 
+                # convert model price dictionary into numpy array and cumulative sum
+                result = data['res_delta_buy_sell_price']['0'].items()
+                graph_data = list(result)
+                model = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/-100
+                # convert res_baseline_price_no_solar:  price dictionary into numpy array and cumulative sum
+                result = data['res_baseline_price_no_solar']['0'].items()
+                graph_data = list(result)
+                baseline_no_solar = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/-100
+                # convert res_opt_baseprice:  price dictionary into numpy array and cumulative sum
+                result = data['res_opt_baseprice']['0'].items()
+                graph_data = list(result)
+                baseline = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/-100
+                # Set up date range - will need to be imported from the streamlit
+                today = date.today()
+                first_date = today
+                last_date = today + timedelta(days=7)
+                date_range = pd.date_range(start = first_date, end=last_date, freq = 'h')
+                date_range = date_range[:168]
+                import matplotlib.pyplot as plt
+                #plt.plot(date_range, model, label='Optimised Price')
+                #plt.plot(date_range, baseline, label = 'Unoptimised Price')
+                #plt.plot(date_range, baseline_no_solar, label = 'Price No Solar')
+                #plt.ylabel('Weekly Cost (£)')
+                #plt.legend()
+
+                # Battery Output
+                df = pd.DataFrame({'date': date_range ,'Solar plus Market': model, 'Solar': baseline, 'Baseline': baseline_no_solar})
+                #fig_final = px.line(x=date_range, y=[model, baseline, baseline_no_solar], labels={'x': 'Date', 'y': 'Cumulative Cost', 'wide_variable_0': 'Solar plus Market', 'wide_variable_1': 'Solar', 'wide_variable_2': 'Baseline'}, title='Total Savings')
+                fig_final = px.line(df, x='date', y=['Baseline', 'Solar', 'Solar plus Market'], labels={'x': 'Date', 'y': 'Cumulative Cost'}, title='Forcasted Weekly Savings') #Remove date and update y axis lable
+                fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                fig_final.update_layout(width=400)
+                fig_final.update_layout(width=1280)
+                st.plotly_chart(fig_final)
                 # Split the remaining space into three columns
                 col3, col4, col5 = st.columns(3)
                 st.divider()
@@ -263,23 +262,24 @@ def page_dashboard():
                 color = 'orange'
                 with col3:
                     # Buy vs Sell Price
-                    fig = px.line(x=dates, y=y_sale, labels={'x': 'Date', 'y': 'Price'}, title='BUY X SELL(£)')
+                    fig = px.line(x=date_range, y=y_sale, labels={'x': 'Date', 'y': 'Price (£)'}, title='FORECASTED ENERGY PRICE')
                     fig.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
                         width=600,
                         height=400,
-                        showlegend=False  # Hide legend
+                        showlegend=False, # Hide legend
+                        yaxis_range=[0,25]
                     )
-                    fig.add_scatter(x=dates, y=y_buy, mode='lines', name='Buy Price')
-                    fig.add_scatter(x=dates, y=y_sale, mode='lines', name='Sell Price')
+                    fig.add_scatter(x=date_range, y=y_buy, mode='lines', name='Buy Price')
+                    fig.add_scatter(x=date_range, y=y_sale, mode='lines', name='Sell Price')
                     fig.update_layout(width=400)
                     st.plotly_chart(fig)
 
 
                 with col4:
                     # Power gen vs power con
-                    fig_power = px.line(x=dates, y=[power_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='GEN X USE')
+                    fig_power = px.line(x=dates, y=[power_gen, y_cons], labels={'x': 'Date', 'y': 'Energy (kWh)'}, title='FORECASTED GEN & USE')
                     fig_power.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -294,7 +294,7 @@ def page_dashboard():
 
                 with col5:
                     # Battery Output
-                    fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='BATTERY CHARGE')
+                    fig_battopt = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Charge (kWh)'}, title='BATTERY CHARGE')
                     fig_battopt.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -376,9 +376,9 @@ def page_dashboard():
                 st.markdown('')  # Empty markdown line for spacing
 
                 foot1, foot2, foot3 = st.columns(3)
-                foot1.metric("Predicted Annual Savings", "£230")
-                foot2.metric("Mean Average Error", "£0.64")
-                foot3.metric("R^2:", "0.92")
+                foot1.metric("Average User Annual Savings", "£230 💷")
+                foot2.metric("Mean Average Error", "£0.64 📈")
+                foot3.metric("R Squared:", "0.92 ✅")
                 st.markdown('')  # Empty markdown line for spacing
                 st.balloons()
                 st.markdown("---")
