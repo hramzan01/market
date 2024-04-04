@@ -84,19 +84,24 @@ with st.container():
 def page_home():
     st.markdown("""<center><iframe src="https://player.vimeo.com/video/929080587?h=deb89b82de&autoplay=1" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></center>""", unsafe_allow_html=True)
     st.markdown('')
-    st.write("""MARKET is a trading platform offering users investment opportunities in collective ownership of solar farms. ☀️""")
+    st.write("""MARKET is an optimisation and trading platform, that builds confidence in collective ownership of solar farms and optimises electricity trading to create profitable renewable infrastructrue. ☀️""")
 
+    st.subheader("""The Problem""", anchor='center')
+
+    st.write("""Amidst the energy crisis, soaring bills have become the norm. Energy companies now incentivise users to shift consumption to off-peak times through dynamic pricing. While single dwellings can easily reap the benefits, others face a trickier challenge.""")
+
+    st.subheader("""The Solution""", anchor='center')
     st.write("""By leveraging weather forecasts and solar panel analytics, it delivers tailored recommendations for buying, holding, or selling energy generated from within your community""")
-
-    st.subheader("""Empowerment: 💪""", anchor='center')
+    st.subheader("Company Values")
+    st.write("""**Empowerment:** 💪""", anchor='center')
     st.write("""
     Empower users to participate in renewable energy ownership, promoting sustainability and community engagement.
     """, align='center')
-    st.subheader("""Optimization: ⏱️""")
+    st.write("""**Optimization:** ⏱️""")
     st.write("""
     Optimize users' trading decisions by leveraging weather forecasts and solar energy output predictions to maximize profitability.
     """)
-    st.subheader("""Accessibility:🤙""")
+    st.write("""**Accessibility:** 🤙""", anchor='center')
     st.write("""
             Make renewable energy trading accessible to all, regardless of technical expertise and type of accomodation.
     """)
