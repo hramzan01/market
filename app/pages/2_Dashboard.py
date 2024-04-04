@@ -89,7 +89,7 @@ def page_dashboard():
             'battery_size': 5,
             'battery_charge': 3
         }
-        api_url = 'https://marketpricelightver4-d2w7qz766q-ew.a.run.app/predict?battery_size=5&battery_charge=3&solar_size=5'
+        api_url = 'https://marketpricelightver4-d2w7qz766q-ew.a.run.app/predict?battery_size=10&battery_charge=3&solar_size=5'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
 
         # Generate Dashboard when submit is triggered
@@ -256,7 +256,6 @@ def page_dashboard():
                 # Split the remaining space into three columns
                 col3, col4, col5 = st.columns(3)
                 st.divider()
-
                 # First column: Buy vs Sell Price
                 # Define a common color for all lines
                 color = 'orange'
@@ -294,7 +293,7 @@ def page_dashboard():
 
                 with col5:
                     # Battery Output
-                    fig_battopt = px.area(x=date_range, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Charge (kWh)'}, title='BATTERY CHARGE')
+                    fig_battopt = px.area(x=date_range, y=y_battopt[1:], labels={'x': 'Date', 'y': 'Battery Charge (kWh)'}, title='BATTERY CHARGE')
                     fig_battopt.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
