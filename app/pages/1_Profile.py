@@ -112,7 +112,7 @@ def page_profile():
     Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
     House_type = ["Bungalow","Terrace house", "Detached house", "Flat", "Semi-detached house"]
     #selected_date = st.date_input('Select a date', datetime.today())
-    selected_house = st.selectbox("Select an option", House_type, key="house")
+    selected_house = st.selectbox("Choose your house type", House_type, key="house")
     st.button("Submit")
     st.session_state.name = Name
     st.session_state.postcode = Postcode
@@ -127,7 +127,7 @@ def page_profileV2():
         image = Image.open(f'app/assets/Bungalow.png').resize((100, 100))
         col1.image(image, use_column_width=False)
         #col2.subheader("")
-    col2.text_input("Name", "", key="name")
+    col2.text_input("Username", "", key="name")
     House_type = ["Bungalow","Terrace house", "Detached house", "Flat", "Semi-detached house"]
     #selected_date = st.date_input('Select a date', datetime.today())
     col2.selectbox("Select an option", House_type, key="house")
@@ -141,8 +141,8 @@ def page_profileV2():
         col3.image(image, use_column_width=False)
         #col2.subheader("")
     battery_type = ["Small battery", "Large battery", "Electric vehicle"]
-    col4.selectbox("Select an option", battery_type, key="Bat_type")
-    col4.number_input("Battery Charge", min_value=0, max_value=100, step=1)
+    col4.selectbox("Choose your battery size", battery_type, key="Bat_type")
+    col4.number_input("Battery Charge (%)", min_value=0, max_value=100, step=1)
     col5, col6= st.columns([1,3])
     try:
         if st.session_state.Num_solar < 5:
@@ -164,7 +164,7 @@ def page_profileV2():
         #col2.subheader("")
     #House_price = st.number_input("House price", step=10000)
     #Income = st.number_input("Income", step=10000)
-    col6.number_input("Solar Size", step=1, max_value=25, key="Num_solar")
+    col6.number_input("Solar Size (kW)", step=1, max_value=25, key="Num_solar")
     #Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
     col6.text_input("Postcode", "", key="postcode")
     col6.button("Submit")
