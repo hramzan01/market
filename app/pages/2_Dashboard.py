@@ -13,7 +13,6 @@ import numpy as np
 from datetime import date, timedelta
 
 
-from streamlit_lottie import st_lottie
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
