@@ -136,7 +136,7 @@ def optimiser_model(data, battery_charge, battery_size):
     # lower bound for x0 is 0, upper bound is 3 (assumption set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
-    ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
+    ub =np.concatenate((np.ones(time_points)*3, df[:,2]+2), axis = 0)
     bounds = Bounds(lb=lb, ub=ub)
     # concatanate x0 and x1 for the model
     x_input = np.concatenate((x0,x1),axis=0)
@@ -153,7 +153,12 @@ def optimiser_model(data, battery_charge, battery_size):
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
     print('minimiser finished')
-    return price_week
+
+    # Find the energy bought and sold
+    energy_sold = np.sum(res.x[time_points :])
+    energy_saved = np.sum(df[:,3]  - res.x[: time_points])
+    print('Model optimsied')
+    return price_week, energy_saved, energy_sold
 
 
 def baseline_model(data):
@@ -206,7 +211,7 @@ def multiple_evaluate_full_model(battery_size, battery_charge,solar_size, acorn 
     td = timedelta(days=3)
     df = pd.DataFrame({'actual_price_week':[],'pred_price_week':[],'actual_baseline_cost':[],'pred_baseline_cost':[], 'act_baseline_cost_no_solar':[],'pred_baseline_cost_no_solar':[]}, index = [])
 
-    for i in range(3): # 90
+    for i in range(30): # 90
         print(f'model {i} evaluation in progress...')
         actual_df, predicted_df = data_collect(d, solar_size)
         actual_df = actual_df.iloc[:time_points]
@@ -223,6 +228,31 @@ def multiple_evaluate_full_model(battery_size, battery_charge,solar_size, acorn 
         pred_baseline_cost_no_solar = baseline_model_no_solar(predicted_df)
         # append to dataframe
         df_to_add = pd.DataFrame([[actual_price_week,pred_price_week,actual_baseline_cost,pred_baseline_cost, act_baseline_cost_no_solar, pred_baseline_cost_no_solar]], columns = ['actual_price_week','pred_price_week','actual_baseline_cost','pred_baseline_cost', 'act_baseline_cost_no_solar','pred_baseline_cost_no_solar'],index =[d])
+        df = pd.concat([df, df_to_add])
+        d = d + td
+        df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
+    return df
+
+
+def multiple_evaluate_full_model_2(battery_size, battery_charge,solar_size, acorn = 'A'):
+    '''
+    Function for running the evaluation function multiple times and saving the reults
+    '''
+    d = datetime(2023,3,4,00,00,0)
+    td = timedelta(days=3)
+    df = pd.DataFrame({'actual_price_week':[],'actual_energy_saved':[],'actual_energy_sold':[],'pred_price_week':[], 'pred_energy_saved':[],'pred_energy_sold':[]}, index = [])
+
+    for i in range(30): # 30
+        print(f'model {i} evaluation in progress...')
+        actual_df, predicted_df = data_collect(d, solar_size)
+        actual_df = actual_df.iloc[:time_points]
+        predicted_df = predicted_df.iloc[:time_points]
+        # Use actual data
+        actual_price_week, actual_energy_saved, actual_energy_sold  = optimiser_model(actual_df, battery_charge,battery_size)
+        # Use predicted data
+        pred_price_week, pred_energy_saved, pred_energy_sold= optimiser_model(predicted_df,battery_charge,battery_size)
+        # append to dataframe
+        df_to_add = pd.DataFrame([[actual_price_week,actual_energy_saved,actual_energy_sold,pred_price_week, pred_energy_saved, pred_energy_sold]], columns = ['actual_price_week','actual_energy_saved','actual_energy_sold','pred_price_week', 'pred_energy_saved','pred_energy_sold'],index =[d])
         df = pd.concat([df, df_to_add])
         d = d + td
         df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
@@ -264,5 +294,5 @@ if __name__ == '__main__':
     time_points = 3*24 # hours
     solar_size = 5
 
-    df = multiple_evaluate_full_model(battery_size, battery_charge,solar_size, acorn = 'A')
+    df = multiple_evaluate_full_model_2(battery_size, battery_charge,solar_size, acorn = 'A')
     print(df)

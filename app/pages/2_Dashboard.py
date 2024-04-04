@@ -13,8 +13,10 @@ import numpy as np
 from datetime import date, timedelta
 
 
+from streamlit_lottie import st_lottie
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
+
 
 # Background
 st.markdown(
@@ -127,6 +129,23 @@ def page_dashboard():
                 x_basep, y_basep = zip(*res_opt_baseprice.items())
                 dates = pd.to_datetime(x_buy)
 
+                ### WEATHER
+                # Import datetime module
+                from datetime import datetime
+
+                # Initialize an empty list to store the weather codes at midday
+                midday_weather_codes = []
+
+                # Iterate over the hourly weather codes
+                for index, weather_code in enumerate(weather):
+                    # Calculate the hour of the day using index (assuming index starts from 0)
+                    hour_of_day = index % 24
+
+                    # Check if the hour is midday (12:00 PM)
+                    if hour_of_day == 12:
+                        # Add the weather code to the list
+                        midday_weather_codes.append(weather_code)
+
                 # VISUALS
                 # plotly map
                 @st.cache_data
@@ -138,7 +157,6 @@ def page_dashboard():
                         mode='markers',
                         marker=go.scattermapbox.Marker(
                             size=30,
-                            opacity=0.5,
                             color='orange',
                         ),
                         text=['London']
@@ -227,9 +245,9 @@ def page_dashboard():
                 st.markdown('')  # Empty markdown line for spacing
                 st.markdown('')  # Empty markdown line for spacing
 
-                image1 = Image.open('app/assets/money_y.png').resize((100, 100))
-                image2 = Image.open('app/assets/energy_y.png').resize((100, 100))
-                image3 = Image.open('app/assets/battery_y.png').resize((100, 100))
+                image1 = Image.open('app/assets/money.png').resize((100, 100))
+                image2 = Image.open('app/assets/energy.png').resize((100, 100))
+                image3 = Image.open('app/assets/battery.png').resize((100, 100))
                 with col0:
                     st.image(image1, use_column_width=False)
                 with col1:
@@ -298,37 +316,65 @@ def page_dashboard():
                 st.markdown('')  # Empty markdown line for spacing
                 st.markdown('')  # Empty markdown line for spacing
 
-                # get images for weather
-                image1 = wmo_description['2']['day']['image']
-                image2 = wmo_description['3']['day']['image']
-                image3 = wmo_description['45']['day']['image']
-                image4 = wmo_description['53']['day']['image']
-                image5 = wmo_description['53']['day']['image']
-                image6 = wmo_description['45']['day']['image']
-                image7 = wmo_description['3']['day']['image']
+                # WEATHER
+                daily_forecasts = np.array(weather).reshape(7, 24)
+
+                # Define the range of daytime hours (for example, 7 AM to 7 PM)
+                start_hour = 7
+                end_hour = 19
+
+                # Find the mode for daytime hours for each day
+                daily_modes = []
+                for day_data in daily_forecasts:
+                  daytime_data = day_data[start_hour:end_hour] # Slice for daytime hours
+                  mode = np.bincount(daytime_data).argmax()
+                  daily_modes.append(mode)
+
+                weekly_forecast = {}
+                for index, day in enumerate(daily_modes):
+                    image = wmo_description[f'{day}']['day']['image']
+                    description = wmo_description[f'{day}']['day']['description']
+                    weekly_forecast[index] = []
+                    weekly_forecast[index].append(image)
+                    weekly_forecast[index].append(description)
 
                 # Split the columns for 7 images for 7 days of week
                 mon, tue, wed, thu, fri, sat, sun = st.columns(7)
-                mon.image(image1)
-                mon.text('  Saturday')
-                tue.image(image2)
-                tue.text('  Sunday')
-                wed.image(image3)
-                wed.text('  Monday')
-                thu.image(image4)
-                thu.text('  Tuesday')
-                fri.image(image5)
-                fri.text('  Wednesday')
-                sat.image(image6)
-                sat.text('  Thursday')
-                sun.image(image7)
-                sun.text('  Friday')
+
+                mon.text('⌁ DAY 01')
+                mon.image(weekly_forecast[0][0])
+                mon.text(weekly_forecast[0][1])
+
+                tue.text('⌁ DAY 02')
+                tue.image(weekly_forecast[1][0])
+                tue.text(weekly_forecast[1][1])
+
+                wed.text('⌁ DAY 03')
+                wed.image(weekly_forecast[2][0])
+                wed.text(weekly_forecast[2][1])
+
+                thu.text('⌁ DAY 04')
+                thu.image(weekly_forecast[3][0])
+                thu.text(weekly_forecast[3][1])
+
+                fri.text('⌁ DAY 05')
+                fri.image(weekly_forecast[4][0])
+                fri.text(weekly_forecast[4][1])
+
+                sat.text('⌁ DAY 06')
+                sat.image(weekly_forecast[5][0])
+                sat.text(weekly_forecast[5][1])
+
+                sun.text('⌁ DAY 07')
+                sun.image(weekly_forecast[6][0])
+                sun.text(weekly_forecast[6][1])
 
 
-                # Footer
+                # FOOTER
                 # Tracker cards
                 st.divider()
                 st.subheader('Model Performance')
+                st.markdown('')  # Empty markdown line for spacing
 
                 foot1, foot2, foot3 = st.columns(3)
                 foot1.metric("Predicted Annual Savings", "£230")
@@ -337,6 +383,10 @@ def page_dashboard():
                 st.markdown('')  # Empty markdown line for spacing
                 st.balloons()
                 st.markdown("---")
+
+
+                # lottie_url = 'https://assets5.lottiefiles.com/packages/lf20_V9t630.json'
+                # st_lottie(lottie_url, key="user", height=100)
 
 
 page_dashboard()
