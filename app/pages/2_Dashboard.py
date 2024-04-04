@@ -9,6 +9,10 @@ import plotly.express as px
 from PIL import Image
 import time
 import os
+import numpy as np
+from datetime import date, timedelta
+
+
 
 st.set_page_config(page_title="Market", initial_sidebar_state="collapsed", layout='wide')
 
@@ -64,18 +68,18 @@ with st.container():
 
 
 def page_dashboard():
-    
+
     battery_size = 5
     battery_charge = 3
     postcode = 'E2 8DY'
     name = 'Le Wagon LDN'
-    
+
     # Return Lat & Lon from postcode
     base_url = 'https://api.postcodes.io/postcodes'
     response = requests.get(f'{base_url}/{postcode}').json()
     lat = response['result']['latitude']
     lon = response['result']['longitude']
-    
+
     # Output: User visuals (this is user dashboard)
     with st.form(key='params_for_api'):
         # Test_API_predict
@@ -84,12 +88,12 @@ def page_dashboard():
             'battery_size': 5,
             'battery_charge': 3
         }
-        api_url = 'http://127.0.0.1:8000/predict'
+        api_url = 'https://marketpricelightver4-d2w7qz766q-ew.a.run.app/predict?battery_size=5&battery_charge=1&solar_size=2'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
-        
+
         # Generate Dashboard when submit is triggered
         if st.form_submit_button('CHARGE ⚡️', use_container_width=True):
-           
+
             # # Simulate progress bar
             # progress_text = "Charging up... Please wait."
             # my_bar = st.progress(0, text=progress_text)
@@ -100,29 +104,29 @@ def page_dashboard():
             # my_bar.empty()
 
             with st.spinner('charging up your dashboard...'):
-                
+
                 # Make API call
                 response = requests.get(api_url, params=params)
                 data = response.json()
                 weather = data['res_weather_code']
-                saleprice = data['prediction_data']['SalePrice_p/kwh']
-                buyprice = data['prediction_data']['PurchasePrice_p/kwh']
-                power_gen = data['prediction_data']['Generation_kwh']
-                power_cons = data['prediction_data']['Consumption_kwh']
+                saleprice = data['prediction_saleprice']
+                buyprice = data['prediction_purchaseprice']
+                power_gen = data['prediction_gen']
+                power_cons = data['prediction_cons']
                 res_opt_batt = data['res_opt_batt']['0']
                 res_opt_buyprice = data['res_opt_buyprice']['0']
                 res_opt_sellprice = data['res_opt_sellprice']['0']
                 res_opt_baseprice = data['res_opt_baseprice']['0']
                 x_sale, y_sale = zip(*saleprice.items()) # unpack a list of pairs into two tuples
                 x_buy, y_buy = zip(*buyprice.items())
-                x_gen, y_gen = zip(*power_gen.items())
+                #x_gen, y_gen = zip(*power_gen.items())
                 x_cons, y_cons = zip(*power_cons.items())
                 x_battopt, y_battopt = zip(*res_opt_batt.items())
                 x_bpopt, y_bpopt = zip(*res_opt_buyprice.items())
                 x_spopt, y_spopt = zip(*res_opt_sellprice.items())
                 x_basep, y_basep = zip(*res_opt_baseprice.items())
                 dates = pd.to_datetime(x_buy)
-                
+
                 # VISUALS
                 # plotly map
                 @st.cache_data
@@ -154,39 +158,75 @@ def page_dashboard():
                             zoom=16
                         ),
                         width=1280,
-                        height=400
+                        height=400,
                     )
                     return fig
-                st.write(london_map(lat, lon))                
-                
+                st.write(london_map(lat, lon))
+
                 # Main optimised prohet graph
                 st.divider()
                 # Battery Output
-                fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+                #fig_final = px.area(x=x_battopt, y=y_battopt, labels={'x': 'Date', 'y': 'Battery Output'}, title='Battery Output')
+                #fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
+                #fig_final.update_layout(width=400)
+                #fig_final.update_layout(width=1280)
+                #st.plotly_chart(fig_final)
+
+                #attempt at new graph
+
+                # convert model price dictionary into numpy array and cumulative sum
+                result = data['res_delta_buy_sell_price']['0'].items()
+                graph_data = list(result)
+                model = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
+                # convert res_baseline_price_no_solar:  price dictionary into numpy array and cumulative sum
+                result = data['res_baseline_price_no_solar']['0'].items()
+                graph_data = list(result)
+                baseline_no_solar = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
+                # convert res_opt_baseprice:  price dictionary into numpy array and cumulative sum
+                result = data['res_opt_baseprice']['0'].items()
+                graph_data = list(result)
+                baseline = np.asarray(np.array(graph_data)[:,1], dtype=float).cumsum()/100
+                # Set up date range - will need to be imported from the streamlit
+                today = date.today()
+                first_date = today
+                last_date = today + timedelta(days=7)
+                date_range = pd.date_range(start = first_date, end=last_date, freq = 'h')
+                date_range = date_range[:168]
+                import matplotlib.pyplot as plt
+                #plt.plot(date_range, model, label='Optimised Price')
+                #plt.plot(date_range, baseline, label = 'Unoptimised Price')
+                #plt.plot(date_range, baseline_no_solar, label = 'Price No Solar')
+                #plt.ylabel('Weekly Cost (£)')
+                #plt.legend()
+
+                # Battery Output
+                df = pd.DataFrame({'date': date_range ,'Solar plus Market': model, 'Solar': baseline, 'Baseline': baseline_no_solar})
+                #fig_final = px.line(x=date_range, y=[model, baseline, baseline_no_solar], labels={'x': 'Date', 'y': 'Cumulative Cost', 'wide_variable_0': 'Solar plus Market', 'wide_variable_1': 'Solar', 'wide_variable_2': 'Baseline'}, title='Total Savings')
+                fig_final = px.line(df, x='date', y=['Solar plus Market', 'Solar', 'Baseline'], labels={'x': 'Date', 'y': 'Cumulative Cost'}, title='Total Savings')
                 fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
                 fig_final.update_layout(width=400)
                 fig_final.update_layout(width=1280)
                 st.plotly_chart(fig_final)
-                
+
                 # Header
                 st.subheader(f"{name}'s Energy Hub")
                 st.divider()
                 st.markdown('')  # Empty markdown line for spacing
-                
+
                 # Tracker cards
                 track1, track2, track3 = st.columns(3)
                 track1.metric("money saved", "£437.8", "£1.25 YTD")
                 track2.metric("energy saved", "⌁121.10kw", "0.46% YTD")
                 track3.metric("energy sold", "£46,583.91", "+4.87% YTD")
                 st.markdown('')  # Empty markdown line for spacing
-                
+
                 # Split the remaining space into three columns
                 col0, col1, col2 = st.columns(3)
-                
+
                 # Display images
                 st.markdown('')  # Empty markdown line for spacing
                 st.markdown('')  # Empty markdown line for spacing
-                
+
                 image1 = Image.open('app/assets/money_y.png').resize((100, 100))
                 image2 = Image.open('app/assets/energy_y.png').resize((100, 100))
                 image3 = Image.open('app/assets/battery_y.png').resize((100, 100))
@@ -196,11 +236,11 @@ def page_dashboard():
                     st.image(image2, use_column_width=False)
                 with col2:
                     st.image(image3, use_column_width=False)
-                
+
                 # Split the remaining space into three columns
                 col3, col4, col5 = st.columns(3)
                 st.divider()
-                
+
                 # First column: Buy vs Sell Price
                 # Define a common color for all lines
                 color = 'orange'
@@ -222,7 +262,7 @@ def page_dashboard():
 
                 with col4:
                     # Power gen vs power con
-                    fig_power = px.line(x=dates, y=[y_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='GEN X USE')
+                    fig_power = px.line(x=dates, y=[power_gen, y_cons], labels={'x': 'Date', 'y': ['gen', 'con']}, title='GEN X USE')
                     fig_power.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -230,7 +270,7 @@ def page_dashboard():
                         height=400,
                         showlegend=False  # Hide legend
                     )
-                    fig_power.add_scatter(x=dates, y=y_gen, mode='lines', name='generated')
+                    fig_power.add_scatter(x=dates, y=power_gen, mode='lines', name='generated')
                     fig_power.add_scatter(x=dates, y=y_cons, mode='lines', name='consumed')
                     fig_power.update_layout(width=400)
                     st.plotly_chart(fig_power)
@@ -248,16 +288,16 @@ def page_dashboard():
                     fig_battopt.update_layout(width=400)
                     st.plotly_chart(fig_battopt)
 
-                    
+
                 # Get definitiion for weather WMO codes
                 wmo_url = 'https://gist.githubusercontent.com/stellasphere/9490c195ed2b53c707087c8c2db4ec0c/raw/76b0cb0ef0bfd8a2ec988aa54e30ecd1b483495d/descriptions.json'
                 wmo_description = requests.get(wmo_url).json()
-                
+
                 # Forecast header
                 st.subheader('7 Day Energy Forecast')
                 st.markdown('')  # Empty markdown line for spacing
                 st.markdown('')  # Empty markdown line for spacing
-                
+
                 # get images for weather
                 image1 = wmo_description['2']['day']['image']
                 image2 = wmo_description['3']['day']['image']
@@ -266,7 +306,7 @@ def page_dashboard():
                 image5 = wmo_description['53']['day']['image']
                 image6 = wmo_description['45']['day']['image']
                 image7 = wmo_description['3']['day']['image']
-                
+
                 # Split the columns for 7 images for 7 days of week
                 mon, tue, wed, thu, fri, sat, sun = st.columns(7)
                 mon.image(image1)
@@ -283,8 +323,8 @@ def page_dashboard():
                 sat.text('  Thursday')
                 sun.image(image7)
                 sun.text('  Friday')
-                
-                
+
+
                 # Footer
                 # Tracker cards
                 st.divider()
@@ -297,6 +337,6 @@ def page_dashboard():
                 st.markdown('')  # Empty markdown line for spacing
                 st.balloons()
                 st.markdown("---")
-        
+
 
 page_dashboard()
