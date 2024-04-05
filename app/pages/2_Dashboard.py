@@ -285,7 +285,7 @@ def page_dashboard():
 
                 with col4:
                     # Power gen vs power con
-                    fig_power = px.line(x=date_range, y=[power_gen, y_cons], labels={'x': 'Date', 'y': 'Energy (kWh)'}, title='FORECASTED GEN & USE')
+                    fig_power = px.line(x=date_range, y=[power_gen, y_cons], labels={'x': 'Date'}, title='FORECASTED GEN & USE')
                     fig_power.update_layout(
                         plot_bgcolor='rgba(0, 0, 0, 0)',
                         paper_bgcolor='rgba(0, 0, 0, 0)',
@@ -295,6 +295,7 @@ def page_dashboard():
                     )
                     fig_power.add_scatter(x=date_range, y=power_gen, mode='lines', name='generated')
                     fig_power.add_scatter(x=date_range, y=y_cons, mode='lines', name='consumed')
+                    fig_power.update_yaxes(title_text='Energy (kWh)')
                     fig_power.update_layout(width=400)
                     st.plotly_chart(fig_power)
 
