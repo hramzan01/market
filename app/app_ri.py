@@ -147,9 +147,9 @@ with st.form(key='params_for_api'):
 
     # api_url = 'https://marketpricelight1-d2w7qz766q-ew.a.run.app/predict'
     # api_url = 'https://marketpricelightver2-d2w7qz766q-ew.a.run.app/predict'
-    # api_url = 'https://marketpricelightver3-d2w7qz766q-ew.a.run.app/predict'
-    # api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict' # (latest)
-    api_url = 'http://127.0.0.1:8000/predict'
+    api_url = 'https://marketpricelightver4-d2w7qz766q-ew.a.run.app/predict'    # (latest)
+    # api_url = 'https://market-price-light-ver3bigger-d2w7qz766q-ew.a.run.app/predict'
+    # api_url = 'http://127.0.0.1:8000/predict'
     # api_url = 'http://127.0.0.1:8000/predict?date=2024-01-03%2018:30:05&battery_size=5&battery_charge=1'
 
     complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])

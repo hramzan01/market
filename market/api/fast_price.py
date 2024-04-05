@@ -32,7 +32,7 @@ def predict(battery_size: int, # 5 total size
     res_opt_buyprice= pd.DataFrame(res['optimised_energy_purchase_price'])
     res_opt_sellprice= pd.DataFrame(res['optimised_energy_sold_price'])
     res_opt_baseprice= pd.DataFrame(res['baseline_hourly_price'])
-    res_weather_code = res['weather_code']
+    res_weather_code = res['weather_code']['weather_code']
     res_weather_code_reset = res_weather_code.reset_index()
     res_weather_code_reset = res_weather_code_reset.drop(columns=['ds'])
     res_weather_code_reset = res_weather_code_reset['weather_code'].tolist()
@@ -52,6 +52,7 @@ def predict(battery_size: int, # 5 total size
               'res_opt_batt': res_opt_batt, 'res_opt_buyprice': res_opt_buyprice,
               'res_opt_sellprice': res_opt_sellprice, 'res_opt_baseprice': res_opt_baseprice,
               'res_weather_code': res_weather_code_reset,
+              # 'res_weather_code': res_weather_code,
               'res_baseline_price_no_solar':res_baseline_price_no_solar,
               #'res_delta_price': res_delta_price,
               'res_delta_profit': res_delta_profit,

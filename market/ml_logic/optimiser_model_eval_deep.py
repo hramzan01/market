@@ -260,6 +260,7 @@ def multiple_evaluate_full_model(battery_size, battery_charge, acorn = 'A'):
         df = pd.concat([df, df_to_add])
         d = d + td
         df.to_csv(f'{os.getcwd()}/market/models/profit_results.csv')
+        print(f'end of run {i}')
     return df
 
 def optimiser_var_model(data, battery_charge, battery_size, model):

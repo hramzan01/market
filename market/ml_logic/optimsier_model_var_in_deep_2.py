@@ -26,12 +26,11 @@ from market.ml_logic.gen_model_deep import *
 import warnings
 warnings.simplefilter('ignore')
 
-global battery_size, battery_charge, time_points, solar_size
+global battery_size, battery_charge, time_points
 
 battery_size = 10 # total size
 battery_charge = 5 # initial charge amount
 time_points = 7*24 # hours
-solar_size = 2 # kW
 
 def data_collect_save_models(d, acorn = 'A'):
     '''
@@ -44,7 +43,7 @@ def data_collect_save_models(d, acorn = 'A'):
     #save_gen_model()
 
 
-def data_collect_prediction(d_input,solar_size, acorn = 'A'):
+def data_collect_prediction(d_input, acorn = 'A'):
     '''
     This function takes in the start date of interest
     and collects the predictions from the three other models
@@ -67,7 +66,7 @@ def data_collect_prediction(d_input,solar_size, acorn = 'A'):
     weather_code = gen.drop(columns =['kwh'])
     gen.drop(columns = ['weather_code'], inplace = True)
     gen.rename(columns={'kwh':'Generation_kwh'}, inplace = True)
-    gen = gen / 1000 * solar_size
+    gen = gen / 500
 
     # Combine the data into a predicted dataframe
     price_buy = (price_pred[['SalePrice_p/kwh']] * 2)
@@ -147,7 +146,7 @@ def optimiser_model(data, battery_charge, battery_size):
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
-    ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
+    ub =np.concatenate((np.ones(time_points)*3, np.ones(time_points)*3), axis = 0)
 
     bounds = Bounds(lb=lb, ub=ub)
     # concatanate x0 and x1 for the model
@@ -159,7 +158,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':150000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':200000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -220,6 +219,7 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
+
 def baseline_model_no_solar(data):
     '''
     A model which takes in the results of three seperate models:
@@ -235,7 +235,6 @@ def baseline_model_no_solar(data):
     baseline_price_no_solar = df[:,4]
     baseline_cost_no_solar = np.sum(df[:,4])
     return baseline_price_no_solar, baseline_cost_no_solar
-
 
 
 def run_full_model_unsaved(battery_size = 10, battery_charge = 1, acorn = 'A'):
@@ -279,7 +278,7 @@ def run_full_model_saved(battery_size=10, battery_charge=1, acorn = 'A'):
     return price_week, baseline_cost
 
 
-def run_full_model_api_unsaved(battery_size, battery_charge, solar_size, acorn = 'A'):
+def run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -292,7 +291,7 @@ def run_full_model_api_unsaved(battery_size, battery_charge, solar_size, acorn =
     # Save the new model
     data_collect_save_models(date, acorn = acorn)
     # Make the  prediction
-    predicted_df, weather_code  = data_collect_prediction(d_input = date,solar_size =solar_size, acorn = acorn)
+    predicted_df, weather_code  = data_collect_prediction(d_input = date, acorn = acorn)
     predicted_df = predicted_df.iloc[:time_points]
     # Optimise for profit
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
@@ -323,7 +322,7 @@ def run_full_model_api_unsaved(battery_size, battery_charge, solar_size, acorn =
     return api_output
 
 
-def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
+def run_full_model_api(battery_size, battery_charge, acorn = 'A'):
     '''
     This function runs the full model and for optimising profit
     The model outputs the cost for one week based on the optimised scenario
@@ -334,7 +333,7 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
     date = date.replace(hour = 0, minute = 0, second = 0, microsecond = 0)
     # Make the  prediction
     #predicted_df = data_collect_prediction(d_input = date, acorn = acorn)
-    predicted_df, weather_code  = data_collect_prediction(d_input = date, solar_size = solar_size, acorn = acorn)
+    predicted_df, weather_code  = data_collect_prediction(d_input = date, acorn = acorn)
     predicted_df = predicted_df.iloc[:time_points]
     # Optimise for profit
     price_week, battery_store, price_energy_bought, price_energy_sold = optimiser_model(predicted_df,battery_charge=battery_charge, battery_size = battery_size)
@@ -348,11 +347,6 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
     baseline_price_list = baseline_price.tolist()
     baseline_price_no_solar_list = baseline_price_no_solar.tolist()
 
-    delta_profit = baseline_price_no_solar - price_energy_bought
-    delta_buy_sell_price = price_energy_bought - price_energy_sold
-
-    delta_profit_list = delta_profit.tolist()
-    delta_buy_sell_price_list = delta_buy_sell_price.tolist()
 
     # format the data for the api
     api_output = {
@@ -365,30 +359,16 @@ def run_full_model_api(battery_size, battery_charge, solar_size, acorn = 'A'):
         'baseline_hourly_price':baseline_price_list,
         'baseline_price_no_solar':baseline_price_no_solar_list,
         'baseline_cost_no_solar':baseline_cost_no_solar,
-        'weather_code': weather_code,
-        'delta_profit': delta_profit_list,
-        'delta_buy_sell_price': delta_buy_sell_price_list
-        # 'predicted_data_ts':(type(predicted_df), predicted_df.shape),
-        # 'predicted_hourly_price_ts':type(price_week),
-        # 'optimised_battery_storage_ts':(type(battery_store_list), len(battery_store_list)),
-        # 'optimised_energy_purchase_price_ts':(type(price_energy_bought_list), len(price_energy_bought_list)),
-        # 'optimised_energy_sold_price_ts':(type(price_energy_sold_list), len(price_energy_sold_list)),
-        # 'baseline_cost_ts':type(baseline_cost),
-        # 'baseline_hourly_price_ts':(type(baseline_price_list), len(baseline_price_list)),
-        # 'weather_code_ts': (type(weather_code))
+        'weather_code': weather_code
     }
     return api_output
 
 
 if __name__ == '__main__':
-    #battery_size = 10 # total size
-    #battery_charge = 5 # initial charge amount
-    #time_points = 3*24 # hours
-
     start = time.time()
     #run_full_model_api_unsaved(battery_size, battery_charge, acorn = 'A')
     start = time.time()
-    api_output = run_full_model_api(battery_size, battery_charge, solar_size=solar_size, acorn = 'A')
+    api_output = run_full_model_api(battery_size, battery_charge, acorn = 'A')
     #price_week, baseline_cost = run_full_model_unsaved()
     #price_week, baseline_cost = run_full_model_saved()
     end = time.time()
@@ -404,4 +384,3 @@ if __name__ == '__main__':
     print(f"£{round(api_output['predicted_hourly_price']/100,2)}")
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-    print(run_full_model_api(battery_size, battery_charge, solar_size))
