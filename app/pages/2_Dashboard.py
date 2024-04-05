@@ -256,6 +256,8 @@ def page_dashboard():
                 fig_final.update_traces(line=dict(dash='solid'), selector=dict(name='Solar plus Market'))
                 fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
                 fig_final.update_layout(width=400)
+                fig_final.update_yaxes(title_text='Cumulative Cost')
+                fig_final.update_xaxes(title_text='')
                 fig_final.update_layout(width=1280)
                 st.plotly_chart(fig_final)
                 # Split the remaining space into three columns
