@@ -159,7 +159,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':50000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':150000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -404,4 +404,4 @@ if __name__ == '__main__':
     print(f"£{round(api_output['predicted_hourly_price']/100,2)}")
     #print(f'The week cost using our model is £{round(price_week/100,2)}')
     #print(f'The week cost not using our model is £{round(baseline_cost/100,2)}')
-    #print(run_full_model_api(battery_size, battery_charge))
+    print(run_full_model_api(battery_size, battery_charge, solar_size))
