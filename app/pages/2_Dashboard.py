@@ -89,7 +89,8 @@ def page_dashboard():
             'battery_size': 5,
             'battery_charge': 3
         }
-        api_url = 'https://marketpricelightver4-d2w7qz766q-ew.a.run.app/predict?battery_size=10&battery_charge=3&solar_size=5'
+        api_url = 'https://market-price-light-ver5bigger-d2w7qz766q-ew.a.run.app/predict?battery_size=10&battery_charge=3&solar_size=5'
+        #api_url = 'http://127.0.0.1:8000/predict?battery_size=10&battery_charge=3&solar_size=5'
         complete_url = api_url + '?' + '&'.join([f"{key}={value}" for key, value in params.items()])
 
         # Generate Dashboard when submit is triggered
@@ -249,6 +250,10 @@ def page_dashboard():
                 df = pd.DataFrame({'date': date_range ,'Solar plus Market': model, 'Solar': baseline, 'No Solar': baseline_no_solar})
                 #fig_final = px.line(x=date_range, y=[model, baseline, baseline_no_solar], labels={'x': 'Date', 'y': 'Cumulative Cost', 'wide_variable_0': 'Solar plus Market', 'wide_variable_1': 'Solar', 'wide_variable_2': 'Baseline'}, title='Total Savings')
                 fig_final = px.line(df, x='date', y=['No Solar', 'Solar', 'Solar plus Market'], labels={'x': 'Date', 'y': 'Cumulative Cost'}, title='Forcasted Weekly Cost') #Remove date and update y axis lable
+                 # Specify line styles
+                fig_final.update_traces(line=dict(dash='dash'), selector=dict(name='No Solar'))
+                fig_final.update_traces(line=dict(dash='dash'), selector=dict(name='Solar'))
+                fig_final.update_traces(line=dict(dash='solid'), selector=dict(name='Solar plus Market'))
                 fig_final.update_layout(plot_bgcolor='rgba(0, 0, 0, 0)', paper_bgcolor='rgba(0, 0, 0, 0)', width=600, height=400)
                 fig_final.update_layout(width=400)
                 fig_final.update_layout(width=1280)
