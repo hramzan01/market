@@ -249,7 +249,7 @@ def page_dashboard():
                 # Battery Output
                 df = pd.DataFrame({'date': date_range ,'Solar plus Market': model, 'Solar': baseline, 'No Solar': baseline_no_solar})
                 #fig_final = px.line(x=date_range, y=[model, baseline, baseline_no_solar], labels={'x': 'Date', 'y': 'Cumulative Cost', 'wide_variable_0': 'Solar plus Market', 'wide_variable_1': 'Solar', 'wide_variable_2': 'Baseline'}, title='Total Savings')
-                fig_final = px.line(df, x='date', y=['No Solar', 'Solar', 'Solar plus Market'], labels={'x': 'Date', 'y': 'Cumulative Cost'}, title='Forcasted Weekly Cost') #Remove date and update y axis lable
+                fig_final = px.line(df, x='date', y=['No Solar', 'Solar', 'Solar plus Market'], title='Forcasted Weekly Cost') #Remove date and update y axis lable
                  # Specify line styles
                 fig_final.update_traces(line=dict(dash='dash'), selector=dict(name='No Solar'))
                 fig_final.update_traces(line=dict(dash='dash'), selector=dict(name='Solar'))
@@ -383,7 +383,7 @@ def page_dashboard():
 
                 foot1, foot2, foot3 = st.columns(3)
                 foot1.metric("Average User Annual Savings", "£230 💷")
-                foot2.metric("Mean Average Error", "£0.64 📈")
+                foot2.metric("Mean Absolute Error", "£0.64 📈")
                 foot3.metric("R Squared:", "0.92 ✅")
                 st.markdown('')  # Empty markdown line for spacing
                 st.balloons()
