@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
-
+from streamlit_extras.switch_page_button import switch_page
 
 import matplotlib.pylab as plt
 
@@ -169,9 +169,8 @@ def page_profileV2():
     col6.text_input("Postcode", "", key="postcode")
     col6.button("Submit")
 
-    if st.button('Go to Another Page'):
-    # Redirect to another page
-        st.markdown('[Click here to go to another page](https://marketenergy.streamlit.app/Dashboard)')
-
+    submit = st.button("Submit")
+    if submit:
+        switch_page("Dashboard")
 
 page_profileV2()
