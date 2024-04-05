@@ -169,6 +169,9 @@ def page_profileV2():
     col6.text_input("Postcode", "", key="postcode")
     col6.button("Submit")
 
+    if st.button('Go to Another Page'):
+    # Redirect to another page
+        st.markdown('[Click here to go to another page](https://marketenergy.streamlit.app/Dashboard)')
 
 
 page_profileV2()
