@@ -167,7 +167,7 @@ def page_profileV2():
     col6.number_input("Solar Size (kW)", step=1, max_value=25, key="Num_solar")
     #Battery_Charge =  st.number_input("Battery Charge", step=1, min_value=0, max_value=100)
     col6.text_input("Postcode", "", key="postcode")
-    col6.button("Submit")
+    #col6.button("Submit")
 
     submit = st.button("Submit")
     if submit:
