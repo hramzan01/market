@@ -146,7 +146,7 @@ def optimiser_model(data, battery_charge, battery_size):
     # lower bound for x0 is 0, upper bound is 3 (assumptino set from grid)
     # lower bound for x1 is 0, upper bound is the PV energy generation
     lb =np.concatenate((np.ones(time_points)*0, np.ones(time_points)*0),axis = 0)
-    ub =np.concatenate((np.ones(time_points)*3, df[:,2]), axis = 0)
+    ub =np.concatenate((np.ones(time_points)*3, np.ones(time_points)*3), axis = 0)
 
     bounds = Bounds(lb=lb, ub=ub)
     # concatanate x0 and x1 for the model
@@ -158,7 +158,7 @@ def optimiser_model(data, battery_charge, battery_size):
         x_input,
         bounds = bounds,
         method='nelder-mead',
-        options={'xatol': 1e-12, 'maxiter':150000, 'disp': True}
+        options={'xatol': 1e-12, 'maxiter':200000, 'disp': True}
         )
     # Work out the minimum cost for energy from the minimisation
     price_week = profit(res.x)
@@ -219,6 +219,7 @@ def baseline_model(data):
     baseline_cost = np.sum(df[:,4])
     return baseline_cost, baseline_price
 
+
 def baseline_model_no_solar(data):
     '''
     A model which takes in the results of three seperate models:
@@ -234,7 +235,6 @@ def baseline_model_no_solar(data):
     baseline_price_no_solar = df[:,4]
     baseline_cost_no_solar = np.sum(df[:,4])
     return baseline_price_no_solar, baseline_cost_no_solar
-
 
 
 def run_full_model_unsaved(battery_size = 10, battery_charge = 1, acorn = 'A'):
